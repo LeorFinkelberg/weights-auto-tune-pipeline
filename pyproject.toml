@@ -1,11 +1,48 @@
 [project]
 name = "weights-auto-tune-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "..."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "ipython>=9.10.0",
     "pre-commit>=4.5.1",
+    "pytest>=9.0.2",
     "ytsaurus-client>=0.13.46",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+biuld-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude  = ["tests*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+]
+testpaths = ["tests"]
+filterwarnings = [
+    "error",
+    "ignore:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertationError",
+    "raise NoImplementatedError",
 ]
