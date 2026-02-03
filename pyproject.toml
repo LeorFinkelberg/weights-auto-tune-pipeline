@@ -1,0 +1,11 @@
+[project]
+name = "weights-auto-tune-pipeline"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ipython>=9.10.0",
+    "pre-commit>=4.5.1",
+    "ytsaurus-client>=0.13.46",
+]
