@@ -16,7 +16,9 @@ class YtUtils:
         config: t.Optional[dict[str, t.Any]] = None,
     ) -> yt.YtClient:
         return yt.YtClient(
-            proxy=proxy or YtProxyClusterNames.YT_PROXY_JUPITER, token=token, config=config
+            proxy=proxy or YtProxyClusterNames.YT_PROXY_JUPITER,
+            token=token,
+            config=config,
         )
 
     @staticmethod
