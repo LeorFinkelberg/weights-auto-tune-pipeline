@@ -8,3 +8,8 @@ NB! Перед каждым коммитом запускается `pre-commit`
 ```bash
 $ git commit -v --no-verify
 ```
+
+Для запуска тестов выполнить
+```bash
+$ nox -s test
+```
