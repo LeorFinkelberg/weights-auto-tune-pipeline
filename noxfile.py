@@ -12,6 +12,6 @@ nox.options.verbose = True
 @nox.session(
     python=[PYTHON_VERSION_DEFAULT], venv_backend=VENV_BACKEND, reuse_venv=True
 )
-def test(session):
+def tests(session):
     session.install("uv", "sync")
     session.run("pytest")

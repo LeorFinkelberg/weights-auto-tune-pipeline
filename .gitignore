@@ -26,3 +26,5 @@ env/
 *.iml
 *.iws
 workspace.xml
+
+logs/
