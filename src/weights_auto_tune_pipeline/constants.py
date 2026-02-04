@@ -1,4 +1,4 @@
-from enum import StrEnum, Enum, auto
+from enum import StrEnum, auto
 
 
 class YtProxyClusterNames(StrEnum):
@@ -22,15 +22,3 @@ class YtProxyClusterNames(StrEnum):
 
     YT_PROXY_JUPITER = auto()
     YT_PROXY_SATURN = auto()
-
-
-class Metrics(Enum):
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
-        return name.upper()
-
-    QUERY_AUC = auto()
-    AUC_WEIGHTED = auto()
-    QUERY_AUC_WEIGHTED = auto()
-    AUC_WEIGHTED_NORMALIZED = auto()
-    GAUC = auto()

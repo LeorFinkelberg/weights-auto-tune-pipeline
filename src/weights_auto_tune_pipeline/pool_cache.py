@@ -7,7 +7,8 @@ from weights_auto_tune_pipeline.logging_ import setup_logging
 from dataclasses import dataclass, field
 from weights_auto_tune_pipeline.types_ import StrPath, StrTablePath
 from weights_auto_tune_pipeline.utils import read_data_from_yt_table
-from weights_auto_tune_pipeline.constants import Metrics
+from weights_auto_tune_pipeline.metrics.base import MetricNames
+from weights_auto_tune_pipeline.metrics.gauc import Gauc
 
 setup_logging()
 
@@ -41,14 +42,32 @@ class PoolCache:
                 "The file was not downloaded ..."
             )
 
-    def compute_metric(self, metric: Metrics = Metrics.GAUC) -> float:
+    def compute_metric(
+        self,
+        nav_screen: str = "direct:tab:video_for_you:similar",
+        platform: str = "android",
+        formula_path: str = "fstorage:vk_video_266_1769078359_f",
+        metric: MetricNames = MetricNames.GAUC,
+        nav_screen_col_name: str = "navScreen",
+        platform_col_name: str = "platform",
+        formula_path_col_name: str = "formulaPath",
+    ) -> float:
         match metric:
-            case Metrics.GAUC:
-                return 0.5
+            case MetricNames.GAUC:
+                gauc: float = Gauc(
+                    path_to_pool_cache=self.path_to_output,
+                ).calculate_metric(
+                    nav_screen=nav_screen,
+                    platform=platform,
+                    formula_path=formula_path,
+                    nav_screen_col_name=nav_screen_col_name,
+                    platform_col_name=platform_col_name,
+                    formula_path_col_name=formula_path_col_name,
+                )
+                logger.success(f"Metric GAUC: {gauc:.5f}")
+                return gauc
+            case MetricNames.QUERY_AUC_WEIGHTED:
+                # TODO
+                return 0.85
             case _:
                 return -1.0
-
-        gauc = 0.85
-        logger.success(f"Done! GAUC: {gauc}")
-
-        return gauc
