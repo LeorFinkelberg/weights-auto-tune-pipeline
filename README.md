@@ -1,4 +1,7 @@
 ### _Порядок работы с проектом_
+
+TODO
+
 ```bash
 $ git clone <repo>
 $ cd <repo>

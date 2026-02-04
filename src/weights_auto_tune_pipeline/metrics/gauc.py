@@ -149,7 +149,7 @@ class Gauc(Metric):
                 continue
 
         if not auc_results:
-            logger.error("Нет валидных групп для расчета AUC")
+            logger.warning("There are no valid groups for calculating AUC")
             return {
                 "target": target_name,
                 "gauc_simple": 0.0,
@@ -182,14 +182,13 @@ class Gauc(Metric):
             "group_details": group_details,
         }
 
-        # 4. Вывод статистики
-        logger.info(f"  Групп с AUC: {result['n_groups']}")
+        logger.info(f"Groups with AUC: {result['n_groups']}")
         logger.info(
-            f"  Положительных примеров: {result['total_positives']} ({result['positive_rate']:.1%})"
+            f"Positive samples: {result['total_positives']} ({result['positive_rate']:.1%})"
         )
-        logger.info(f"  GAUC (взвешенный): {result['gauc_weighted']:.4f}")
-        logger.info(f"  GAUC (простой): {result['gauc_simple']:.4f}")
-        logger.info(f"  Std AUC: {result['std']:.4f}")
+        logger.info(f"GAUC (weighted): {result['gauc_weighted']:.4f}")
+        logger.info(f"GAUC: {result['gauc_simple']:.4f}")
+        logger.info(f"Std AUC: {result['std']:.4f}")
 
         return result
 
