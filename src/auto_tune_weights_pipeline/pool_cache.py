@@ -3,14 +3,14 @@ from pathlib import Path
 import yt.wrapper as yt
 
 from loguru import logger
-from weights_auto_tune_pipeline.logging_ import setup_logging
+from auto_tune_weights_pipeline.logging_ import setup_logging
 from dataclasses import dataclass, field
-from weights_auto_tune_pipeline.types_ import StrPath, StrTablePath
-from weights_auto_tune_pipeline.utils import read_data_from_yt_table
-from weights_auto_tune_pipeline.metrics.base import MetricNames
-from weights_auto_tune_pipeline.metrics.gauc import Gauc
-from weights_auto_tune_pipeline.columns import Columns
-from weights_auto_tune_pipeline.target_config import TargetConfig
+from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
+from auto_tune_weights_pipeline.utils import read_data_from_yt_table
+from auto_tune_weights_pipeline.metrics.base import MetricNames
+from auto_tune_weights_pipeline.metrics.gauc import Gauc
+from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.target_config import TargetConfig
 
 setup_logging()
 

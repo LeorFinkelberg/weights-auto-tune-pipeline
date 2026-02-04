@@ -6,9 +6,9 @@ from itertools import islice
 
 from pathlib import Path
 from loguru import logger
-from weights_auto_tune_pipeline.constants import YtProxyClusterNames
-from weights_auto_tune_pipeline.types_ import StrPath, StrTablePath
-from weights_auto_tune_pipeline.logging_ import setup_logging
+from auto_tune_weights_pipeline.constants import YtProxyClusterNames
+from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
+from auto_tune_weights_pipeline.logging_ import setup_logging
 
 setup_logging()
 

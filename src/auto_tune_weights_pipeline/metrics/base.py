@@ -2,10 +2,10 @@ import abc
 import typing as t
 from dataclasses import dataclass
 from enum import Enum, auto
-from weights_auto_tune_pipeline.columns import Columns
-from weights_auto_tune_pipeline.target_config import TargetConfig
+from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.target_config import TargetConfig
 
-from weights_auto_tune_pipeline.types_ import StrTablePath
+from auto_tune_weights_pipeline.types_ import StrTablePath
 
 
 class MetricNames(Enum):

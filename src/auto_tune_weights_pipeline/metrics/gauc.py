@@ -7,10 +7,10 @@ from typing_extensions import override
 from sklearn.metrics import roc_auc_score
 from loguru import logger
 
-from weights_auto_tune_pipeline.columns import Columns
-from weights_auto_tune_pipeline.logging_ import setup_logging
-from weights_auto_tune_pipeline.metrics.base import Metric
-from weights_auto_tune_pipeline.target_config import (
+from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.logging_ import setup_logging
+from auto_tune_weights_pipeline.metrics.base import Metric
+from auto_tune_weights_pipeline.target_config import (
     TargetConfig,
     DEFAULT_TARGETS_CONFIG,
 )
@@ -149,6 +149,7 @@ class Gauc(Metric):
                 continue
 
         if not auc_results:
+            logger.debug(pool_cache.count())
             logger.warning("There are no valid groups for calculating AUC")
             return {
                 "target": target_name,

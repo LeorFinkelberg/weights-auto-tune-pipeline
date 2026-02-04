@@ -2,8 +2,8 @@ import typing as t
 import polars as pl
 
 from dataclasses import dataclass
-from weights_auto_tune_pipeline.columns import Columns
-from weights_auto_tune_pipeline.events import Events
+from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.events import Events
 
 
 @dataclass(frozen=True)

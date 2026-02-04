@@ -1,5 +1,5 @@
-from weights_auto_tune_pipeline.pool_cache import PoolCache
-from weights_auto_tune_pipeline.target_config import DEFAULT_TARGETS_CONFIG
+from auto_tune_weights_pipeline.pool_cache import PoolCache
+from auto_tune_weights_pipeline.target_config import DEFAULT_TARGETS_CONFIG
 
 
 def main():

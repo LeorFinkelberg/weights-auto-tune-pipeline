@@ -1,8 +1,8 @@
 import pytest
 
 from unittest.mock import patch, MagicMock
-from weights_auto_tune_pipeline.utils import create_yt_client
-from weights_auto_tune_pipeline.constants import YtProxyClusterNames
+from auto_tune_weights_pipeline.utils import create_yt_client
+from auto_tune_weights_pipeline.constants import YtProxyClusterNames
 
 
 class TestYtClientCreation:
