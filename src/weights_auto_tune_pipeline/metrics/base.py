@@ -1,6 +1,9 @@
 import abc
+import typing as t
 from dataclasses import dataclass
 from enum import Enum, auto
+from weights_auto_tune_pipeline.columns import Columns
+from weights_auto_tune_pipeline.target_config import TargetConfig
 
 from weights_auto_tune_pipeline.types_ import StrTablePath
 
@@ -24,13 +27,9 @@ class Metric(abc.ABC):
     @abc.abstractmethod
     def calculate_metric(
         self,
-        nav_screen: str,
-        platform: str,
-        formula_path: str,
-        metric: MetricNames,
-        nav_screen_col_name: str,
-        platform_col_name: str,
-        formula_path_col_name: str,
+        target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
+        session_col_name: str = Columns.RID_COL_NAME,
+        score_col_name: str = Columns.SCORE_COL_NAME,
     ) -> float:
         """Computes metric."""
 

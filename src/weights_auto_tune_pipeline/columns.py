@@ -6,5 +6,6 @@ class Columns(StrEnum):
     SCORE_COL_NAME = "score"
     EVENTS_COL_NAME = "events"
     VIEW_TIME_SEC_COL_NAME = "viewTimeSec"
-    WATCH_COVERAGE_RECORD_COL_NAME = "watchCoverageRecord"
-    FIRST_FRAME_COL_NAME = "firstFrame"
+    NAV_SCREEN_COL_NAME = "navScreen"
+    PLATFORM_COL_NAME = "platform"
+    FORMULA_PATH_COL_NAME = "formulaPath"

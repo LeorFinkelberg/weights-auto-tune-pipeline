@@ -9,6 +9,8 @@ from weights_auto_tune_pipeline.types_ import StrPath, StrTablePath
 from weights_auto_tune_pipeline.utils import read_data_from_yt_table
 from weights_auto_tune_pipeline.metrics.base import MetricNames
 from weights_auto_tune_pipeline.metrics.gauc import Gauc
+from weights_auto_tune_pipeline.columns import Columns
+from weights_auto_tune_pipeline.target_config import TargetConfig
 
 setup_logging()
 
@@ -44,6 +46,9 @@ class PoolCache:
 
     def compute_metric(
         self,
+        target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
+        session_col_name: str = Columns.RID_COL_NAME,
+        score_col_name: str = Columns.SCORE_COL_NAME,
         nav_screen: str = "direct:tab:video_for_you:similar",
         platform: str = "android",
         formula_path: str = "fstorage:vk_video_266_1769078359_f",
@@ -51,12 +56,15 @@ class PoolCache:
         nav_screen_col_name: str = "navScreen",
         platform_col_name: str = "platform",
         formula_path_col_name: str = "formulaPath",
-    ) -> float:
+    ) -> dict[str, dict[str, t.Any]]:
         match metric:
             case MetricNames.GAUC:
-                gauc: float = Gauc(
+                return Gauc(
                     path_to_pool_cache=self.path_to_output,
                 ).calculate_metric(
+                    target_configs=target_configs,
+                    session_col_name=session_col_name,
+                    score_col_name=score_col_name,
                     nav_screen=nav_screen,
                     platform=platform,
                     formula_path=formula_path,
@@ -64,10 +72,8 @@ class PoolCache:
                     platform_col_name=platform_col_name,
                     formula_path_col_name=formula_path_col_name,
                 )
-                logger.success(f"Metric GAUC: {gauc:.5f}")
-                return gauc
             case MetricNames.QUERY_AUC_WEIGHTED:
                 # TODO
-                return 0.85
+                return {}
             case _:
-                return -1.0
+                return {}

@@ -3,6 +3,7 @@ import polars as pl
 
 from dataclasses import dataclass
 from weights_auto_tune_pipeline.columns import Columns
+from weights_auto_tune_pipeline.events import Events
 
 
 @dataclass(frozen=True)
@@ -29,20 +30,20 @@ class TargetConfig:
 DEFAULT_TARGETS_CONFIG = {
     "action_play": TargetConfig(
         name="action_play",
-        event_name=Columns.EVENTS_COL_NAME,
+        event_name=Events.ACTION_PLAY,
     ),
     "watch_coverage_30s": TargetConfig(
         name="watch_coverage_30s",
-        event_name=Columns.WATCH_COVERAGE_RECORD_COL_NAME,
+        event_name=Events.WATCH_COVERAGE_RECORD,
         view_threshold_sec=30.0,
     ),
     "watch_coverage_60s": TargetConfig(
         name="watch_coverage_60s",
-        event_name=Columns.WATCH_COVERAGE_RECORD_COL_NAME,
+        event_name=Events.WATCH_COVERAGE_RECORD,
         view_threshold_sec=60.0,
     ),
     "first_frame": TargetConfig(
         name="first_frame",
-        event_name=Columns.FIRST_FRAME_COL_NAME,
+        event_name=Events.FIRST_FRAME,
     ),
 }
