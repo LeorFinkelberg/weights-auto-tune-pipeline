@@ -1,23 +1,10 @@
 import abc
 import typing as t
 from dataclasses import dataclass
-from enum import Enum, auto
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.target_config import TargetConfig
 
 from auto_tune_weights_pipeline.types_ import StrTablePath
-
-
-class MetricNames(Enum):
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
-        return name.upper()
-
-    QUERY_AUC = auto()
-    AUC_WEIGHTED = auto()
-    QUERY_AUC_WEIGHTED = auto()
-    AUC_WEIGHTED_NORMALIZED = auto()
-    GAUC = auto()
 
 
 @dataclass(frozen=True)
