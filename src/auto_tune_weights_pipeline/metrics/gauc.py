@@ -37,6 +37,14 @@ class Gauc(Metric):
         pool_cache = pl.read_ndjson(self.path_to_pool_cache).filter(
             (pl.col(nav_screen_col_name) == nav_screen)
             & (pl.col(platform_col_name) == platform)
+            & (pl.col(formula_path_col_name) == formula_path)
+        )
+        logger.debug(
+            pool_cache.select(
+                pl.col("navScreen"),
+                pl.col("platform"),
+                pl.col("formulaPath"),
+            ).count()
         )
 
         return self._calculate_metric_for_all_targets(
@@ -148,7 +156,7 @@ class Gauc(Metric):
                 continue
 
         if not auc_results:
-            logger.debug(pool_cache.count())
+            # logger.debug(pool_cache.count())
             logger.warning("There are no valid groups for calculating AUC")
             return {
                 "target": target_name,

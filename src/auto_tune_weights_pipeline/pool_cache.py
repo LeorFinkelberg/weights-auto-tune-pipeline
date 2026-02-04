@@ -1,8 +1,7 @@
 import typing as t
-from pathlib import Path
+
 import yt.wrapper as yt
 
-from loguru import logger
 from auto_tune_weights_pipeline.logging_ import setup_logging
 from dataclasses import dataclass, field
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
@@ -25,24 +24,20 @@ class PoolCache:
     start_row: t.Optional[int] = 0
     end_row: t.Optional[int] = 1_000
     format_: yt.JsonFormat = field(default_factory=yt.JsonFormat)
+    overwrite: bool = (True,)
 
     def __post_init__(self) -> None:
-        if not Path.cwd().joinpath(self.path_to_output).exists():
-            read_data_from_yt_table(
-                path_to_yt_table=self.path_to_yt_table,
-                path_to_output=self.path_to_output,
-                proxy=self.proxy,
-                token=self.token,
-                config=self.config,
-                start_row=self.start_row,
-                end_row=self.end_row,
-                format_=self.format_,
-            )
-        else:
-            logger.warning(
-                f"File {str(self.path_to_output)!r} already exists. "
-                "The file was not downloaded ..."
-            )
+        read_data_from_yt_table(
+            path_to_yt_table=self.path_to_yt_table,
+            path_to_output=self.path_to_output,
+            proxy=self.proxy,
+            token=self.token,
+            config=self.config,
+            start_row=self.start_row,
+            end_row=self.end_row,
+            format_=self.format_,
+            overwrite=self.overwrite,
+        )
 
     def calculate_metric(
         self,

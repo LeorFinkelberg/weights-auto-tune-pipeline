@@ -38,6 +38,7 @@ def read_data_from_yt_table(
     start_row: t.Optional[int] = 0,
     end_row: t.Optional[int] = 1_000,
     format_: yt.JsonFormat = yt.JsonFormat(),
+    overwrite: bool = True,
 ) -> None:
     """Reads table from YT Cypress."""
 
@@ -57,13 +58,20 @@ def read_data_from_yt_table(
     )
 
     _path_to_output = Path.cwd().joinpath(path_to_output)
-    with _path_to_output.open(mode="w", encoding="utf-8") as output:
-        line: dict
-        for line in islice(table, start_row, end_row):
-            output.write(f"{json.dumps(line)}\n")
+    if (not _path_to_output.exists()) or (_path_to_output.exists() and overwrite):
+        with _path_to_output.open(mode="w", encoding="utf-8") as output:
+            line: dict
+            for line in islice(table, start_row, end_row):
+                output.write(f"{json.dumps(line)}\n")
 
-        if _path_to_output.exists():
-            logger.success(f"File {str(_path_to_output)!r} was successfully written")
+            if _path_to_output.exists():
+                logger.success(
+                    f"File {str(_path_to_output)!r} was successfully written"
+                )
+    else:
+        logger.warning(
+            f"File {str(_path_to_output)!r} already exists. The file was not downloaded ..."
+        )
 
 
 @logger.catch
