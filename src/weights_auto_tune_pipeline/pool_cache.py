@@ -44,7 +44,7 @@ class PoolCache:
                 "The file was not downloaded ..."
             )
 
-    def compute_metric(
+    def calculate_metric(
         self,
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
         session_col_name: str = Columns.RID_COL_NAME,
