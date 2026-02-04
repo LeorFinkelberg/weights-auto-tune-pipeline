@@ -1,7 +1,7 @@
 import pytest
 
 from unittest.mock import patch, MagicMock
-from auto_tune_weights_pipeline.utils import create_yt_client
+from auto_tune_weights_pipeline.utils import YtReader
 from auto_tune_weights_pipeline.constants import YtProxyClusterNames
 
 
@@ -15,7 +15,7 @@ class TestYtClientCreation:
         mock_instance = MagicMock()
         mock_yt_client.return_value = mock_instance
 
-        yt_client = create_yt_client()
+        yt_client = YtReader.create_yt_client()
 
         mock_yt_client.assert_called_once_with(
             proxy=YtProxyClusterNames.YT_PROXY_JUPITER,
@@ -29,7 +29,7 @@ class TestYtClientCreation:
         mock_instance = MagicMock()
         mock_yt_client.return_value = mock_instance
 
-        yt_client = create_yt_client(proxy=YtProxyClusterNames.YT_PROXY_SATURN)
+        yt_client = YtReader.create_yt_client(proxy=YtProxyClusterNames.YT_PROXY_SATURN)
 
         mock_yt_client.assert_called_once_with(
             proxy=YtProxyClusterNames.YT_PROXY_SATURN,
@@ -44,7 +44,7 @@ class TestYtClientCreation:
         mock_instance = MagicMock()
         mock_yt_client.return_value = mock_instance
 
-        yt_client = create_yt_client(token=test_token)
+        yt_client = YtReader.create_yt_client(token=test_token)
 
         mock_yt_client.assert_called_once_with(
             proxy=YtProxyClusterNames.YT_PROXY_JUPITER, token=test_token, config=None
@@ -62,7 +62,7 @@ class TestYtClientCreation:
         mock_instance = MagicMock()
         mock_yt_client.return_value = mock_instance
 
-        yt_client = create_yt_client(config=test_config)
+        yt_client = YtReader.create_yt_client(config=test_config)
 
         mock_yt_client.assert_called_once_with(
             proxy=YtProxyClusterNames.YT_PROXY_JUPITER, token=None, config=test_config
@@ -77,7 +77,7 @@ class TestYtClientCreation:
         mock_instance = MagicMock()
         mock_yt_client.return_value = mock_instance
 
-        yt_client = create_yt_client(
+        yt_client = YtReader.create_yt_client(
             proxy=custom_proxy, token=test_token, config=test_config
         )
 
