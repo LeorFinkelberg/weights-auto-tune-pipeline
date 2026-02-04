@@ -27,17 +27,16 @@ class Gauc(Metric):
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
         session_col_name: str = Columns.RID_COL_NAME,
         score_col_name: str = Columns.SCORE_COL_NAME,
-        nav_screen: str = "feed",
-        platform: str = "vk_video_android",
+        nav_screen: str = "direct:tab:video_for_you:similar",
+        platform: str = "android",
         formula_path: str = "fstorage:vk_video_266_1769078359_f",
         nav_screen_col_name: str = Columns.NAV_SCREEN_COL_NAME,
         platform_col_name: str = Columns.PLATFORM_COL_NAME,
         formula_path_col_name: str = Columns.FORMULA_PATH_COL_NAME,
     ) -> dict[str, dict[str, t.Any]]:
-        pool_cache = pl.read_ndjson(self.path_to_pool_cache)
-        pool_cache = pool_cache.filter(
-            (pl.col(Columns.NAV_SCREEN_COL_NAME) == nav_screen)
-            & (pl.col(Columns.PLATFORM_COL_NAME) == platform)
+        pool_cache = pl.read_ndjson(self.path_to_pool_cache).filter(
+            (pl.col(nav_screen_col_name) == nav_screen)
+            & (pl.col(platform_col_name) == platform)
         )
 
         return self._calculate_metric_for_all_targets(
