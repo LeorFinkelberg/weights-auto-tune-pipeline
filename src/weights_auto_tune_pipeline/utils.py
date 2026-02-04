@@ -32,12 +32,12 @@ def create_yt_client(
 def read_data_from_yt_table(
     path_to_yt_table: StrTablePath,
     path_to_output: StrPath,
-    format_: yt.JsonFormat = yt.JsonFormat(),
     proxy: t.Optional[str] = None,
     token: t.Optional[str] = None,
+    config: t.Optional[dict[str, t.Any]] = None,
     start_row: t.Optional[int] = 0,
     end_row: t.Optional[int] = 1_000,
-    config: t.Optional[dict[str, t.Any]] = None,
+    format_: yt.JsonFormat = yt.JsonFormat(),
 ) -> None:
     """Reads table from YT Cypress."""
 
