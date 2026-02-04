@@ -27,7 +27,7 @@ class TargetConfig:
         return pl.when(base_expr).then(1).otherwise(0)
 
 
-DEFAULT_TARGETS_CONFIG = {
+DEFAULT_TARGETS_CONFIG: t.Final[dict] = {
     "action_play": TargetConfig(
         name="action_play",
         event_name=Events.ACTION_PLAY,
