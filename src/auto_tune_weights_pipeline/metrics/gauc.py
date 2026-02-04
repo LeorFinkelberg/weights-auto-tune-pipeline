@@ -6,6 +6,7 @@ import numpy as np
 from typing_extensions import override
 from loguru import logger
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score
 
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.logging_ import setup_logging
@@ -19,7 +20,7 @@ setup_logging()
 
 
 class GAUC(Metric):
-    """Group AUC metric calculator."""
+    """Group AUC and regular AUC metric calculator."""
 
     @override
     def calculate_metric(
@@ -33,6 +34,7 @@ class GAUC(Metric):
         nav_screen_col_name: str = Columns.NAV_SCREEN_COL_NAME,
         platform_col_name: str = Columns.PLATFORM_COL_NAME,
         formula_path_col_name: str = Columns.FORMULA_PATH_COL_NAME,
+        calculate_regular_auc: bool = True,
     ) -> dict[str, dict[str, t.Any]]:
         """Calculates metric."""
 
@@ -48,6 +50,7 @@ class GAUC(Metric):
             target_configs=target_configs,
             session_col_name=session_col_name,
             score_col_name=score_col_name,
+            calculate_regular_auc=calculate_regular_auc,
         )
 
     @staticmethod
@@ -87,32 +90,150 @@ class GAUC(Metric):
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
         session_col_name: str = Columns.RID_COL_NAME,
         score_col_name: str = Columns.SCORE_COL_NAME,
+        calculate_regular_auc: bool = True,
     ) -> dict[str, dict[str, t.Any]]:
         """Calculates metric for all targets."""
 
         pool_cache_with_labels = self._create_labels(pool_cache, target_configs)
+        target_names = self._extract_target_names(target_configs)
 
-        if isinstance(target_configs, dict):
-            target_names = list(target_configs.keys())
-        elif isinstance(target_configs, list):
-            if all(isinstance(target_config, str) for target_config in target_configs):
-                target_names = target_configs
-            else:
-                target_names = [target_config.name for target_config in target_configs]
+        if not target_names:
+            logger.warning("No valid target names found")
+            return {}
 
         results = {}
         for target_name in target_names:
-            result = self._calculate_metric_for_target_chunked(
+            result = self._calculate_both_metrics_for_target(
                 pool_cache_with_labels,
                 target_name,
                 session_col_name,
                 score_col_name,
+                calculate_regular_auc=calculate_regular_auc,
             )
             results[target_name] = result
 
         return results
 
-    def _calculate_metric_for_target_chunked(
+    @staticmethod
+    def _extract_target_names(
+        target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
+    ) -> list[str]:
+        """Extracts target names from various input formats."""
+
+        if isinstance(target_configs, dict):
+            return list(target_configs.keys())
+
+        elif isinstance(target_configs, list):
+            if not target_configs:
+                logger.warning("Empty target_configs list provided")
+                return []
+
+            first_element = target_configs[0]
+
+            if isinstance(first_element, str):
+                if not all(isinstance(item, str) for item in target_configs):
+                    raise TypeError(
+                        "Mixed types in target_configs list. "
+                        "All elements must be strings or all must be TargetConfig."
+                    )
+                return target_configs
+
+            elif isinstance(first_element, TargetConfig):
+                if not all(isinstance(item, TargetConfig) for item in target_configs):
+                    raise TypeError(
+                        "Mixed types in target_configs list. "
+                        "All elements must be strings or all must be TargetConfig."
+                    )
+                return [config.name for config in target_configs]
+
+            else:
+                raise TypeError(
+                    f"Unsupported element type in list: {type(first_element)}. "
+                    "Expected str or TargetConfig."
+                )
+        else:
+            raise TypeError(
+                f"Unsupported target_configs type: {type(target_configs)}. "
+                "Expected dict, list[str] or list[TargetConfig]."
+            )
+
+    def _calculate_both_metrics_for_target(
+        self,
+        pool_cache: pl.DataFrame,
+        target_name: str,
+        session_col_name: str,
+        score_col_name: str,
+        calculate_regular_auc: bool = True,
+    ) -> dict[str, t.Any]:
+        """Calculates both GAUC and regular AUC for a target."""
+
+        label_col_name = f"label_{target_name}"
+        logger.info(f"Calculating metrics for target: {target_name}")
+
+        result = {
+            "target": target_name,
+            "total_samples": len(pool_cache),
+            "total_positives": pool_cache[label_col_name].sum(),
+            "positive_rate": float(pool_cache[label_col_name].mean()),
+        }
+
+        if calculate_regular_auc:
+            auc_result = self._calculate_regular_auc(
+                pool_cache, target_name, score_col_name
+            )
+            result.update(auc_result)
+
+        gauc_result = self._calculate_gauc_for_target(
+            pool_cache, target_name, session_col_name, score_col_name
+        )
+        result.update(gauc_result)
+
+        return result
+
+    @staticmethod
+    def _calculate_regular_auc(
+        pool_cache: pl.DataFrame,
+        target_name: str,
+        score_col_name: str,
+    ) -> dict[str, t.Any]:
+        """Calculates regular AUC."""
+
+        label_col_name = f"label_{target_name}"
+
+        unique_labels = pool_cache[label_col_name].unique().to_list()
+        if len(unique_labels) < 2:
+            logger.warning(
+                f"Cannot calculate AUC for target {target_name}: "
+                f"only {unique_labels} classes found"
+            )
+            return {
+                "AUC": 0.0,
+                "AUC_valid": False,
+                "AUC_error": f"Insufficient classes: {unique_labels}",
+            }
+
+        try:
+            y_true = pool_cache[label_col_name].to_numpy()
+            y_score = pool_cache[score_col_name].to_numpy()
+
+            auc = roc_auc_score(y_true, y_score)
+
+            if np.isnan(auc):
+                logger.warning(f"AUC is NaN for target {target_name}")
+                return {
+                    "AUC": 0.0,
+                    "AUC_valid": False,
+                    "AUC_error": "AUC calculation resulted in NaN",
+                }
+
+            logger.info(f"Regular AUC for {target_name}: {auc:.4f}")
+
+            return {"AUC": float(auc), "AUC_valid": True, "AUC_error": None}
+        except Exception as e:
+            logger.error(f"Error calculating AUC for {target_name}: {e}")
+            return {"AUC": 0.0, "AUC_valid": False, "AUC_error": str(e)}
+
+    def _calculate_gauc_for_target(
         self,
         pool_cache: pl.DataFrame,
         target_name: str,
@@ -120,22 +241,20 @@ class GAUC(Metric):
         score_col_name: str,
         chunk_size: int = 100_000,
     ) -> dict[str, t.Any]:
-        """Calculates metric for target by chunks."""
+        """Calculates GAUC for a target."""
 
         label_col_name = f"label_{target_name}"
-        logger.info(
-            f"Calculating CHUNKED {self.get_metric_name()} for target: {target_name}"
-        )
 
         all_auc_values = []
         all_group_sizes = []
         all_group_details = []
 
         unique_groups = pool_cache[session_col_name].unique().to_list()
-        logger.info(f"Total unique groups: {len(unique_groups)}")
+        logger.info(f"Total unique groups for GAUC: {len(unique_groups)}")
 
         for i in tqdm(
-            range(0, len(unique_groups), chunk_size), desc="Groups processing ..."
+            range(0, len(unique_groups), chunk_size),
+            desc=f"GAUC groups processing for {target_name} ...",
         ):
             chunk_groups = unique_groups[i : i + chunk_size]
 
@@ -198,18 +317,16 @@ class GAUC(Metric):
                     }
                 )
 
-            logger.info(
-                f"Processed {min(i + chunk_size, len(unique_groups))} / {len(unique_groups)} groups"
-            )
-
         if not all_auc_values:
-            return self._empty_result(pool_cache, target_name, label_col_name)
+            logger.warning(
+                f"No valid groups for {self.get_metric_name()} calculation for {target_name}"
+            )
+            return self._empty_gauc_result()
 
         auc_array = np.array(all_auc_values)
         weights_array = np.array(all_group_sizes)
 
         result = {
-            "target": target_name,
             "GAUCSimple": float(np.mean(auc_array)),
             "GAUCWeighted": float(np.average(auc_array, weights=weights_array)),
             "n_groups": len(auc_array),
@@ -217,23 +334,18 @@ class GAUC(Metric):
             "min": float(np.min(auc_array)),
             "max": float(np.max(auc_array)),
             "median": float(np.median(auc_array)),
-            "total_samples": len(pool_cache),
-            "total_positives": pool_cache[label_col_name].sum(),
-            "positive_rate": float(pool_cache[label_col_name].mean()),
             "group_details": all_group_details,
+            "GAUC_valid": len(auc_array) > 0,
         }
 
-        self._log_results(result)
+        self._log_gauc_results(target_name, result)
         return result
 
     @staticmethod
-    def _empty_result(
-        pool_cache: pl.DataFrame, target_name: str, label_col_name: str
-    ) -> dict[str, t.Any]:
-        """Returns empty result."""
+    def _empty_gauc_result() -> dict[str, t.Any]:
+        """Returns empty GAUC result."""
 
         return {
-            "target": target_name,
             "GAUCSimple": 0.0,
             "GAUCWeighted": 0.0,
             "n_groups": 0,
@@ -241,20 +353,114 @@ class GAUC(Metric):
             "min": 0.0,
             "max": 0.0,
             "median": 0.0,
-            "total_samples": len(pool_cache),
-            "total_positives": pool_cache[label_col_name].sum(),
-            "positive_rate": float(pool_cache[label_col_name].mean()),
             "group_details": [],
+            "GAUC_valid": False,
         }
 
     @staticmethod
-    def _log_results(result: dict[str, t.Any]) -> None:
-        """Logs result."""
+    def _log_gauc_results(target_name: str, result: dict[str, t.Any]) -> None:
+        """Logs GAUC results."""
 
+        logger.info(f"GAUC results for {target_name}:")
         logger.info(f"Groups with AUC: {result['n_groups']}")
-        logger.info(
-            f"Positive samples: {result['total_positives']} ({result['positive_rate']:.1%})"
-        )
         logger.info(f"GAUC (weighted): {result['GAUCWeighted']:.4f}")
         logger.info(f"GAUC (simple): {result['GAUCSimple']:.4f}")
         logger.info(f"Std AUC: {result['std']:.4f}")
+        logger.info(f"Min AUC: {result['min']:.4f}")
+        logger.info(f"Max AUC: {result['max']:.4f}")
+        logger.info(f"Median AUC: {result['median']:.4f}")
+
+    @staticmethod
+    def compare_auc_gauc(
+        auc_result: dict[str, t.Any], gauc_result: dict[str, t.Any]
+    ) -> dict[str, t.Any]:
+        """Compares AUC and GAUC results."""
+
+        comparison = {
+            "target": auc_result.get("target", gauc_result.get("target", "unknown")),
+            "AUC": auc_result.get("AUC", 0.0),
+            "GAUCWeighted": gauc_result.get("GAUCWeighted", 0.0),
+            "GAUCSimple": gauc_result.get("GAUCSimple", 0.0),
+            "difference_auc_gauc_weighted": (
+                auc_result.get("AUC", 0.0) - gauc_result.get("GAUCWeighted", 0.0)
+            ),
+            "difference_auc_gauc_simple": (
+                auc_result.get("AUC", 0.0) - gauc_result.get("GAUCSimple", 0.0)
+            ),
+            "relative_diff_auc_gauc_weighted": (
+                (auc_result.get("AUC", 0.0) - gauc_result.get("GAUCWeighted", 0.0))
+                / max(auc_result.get("AUC", 1e-10), 1e-10)
+            ),
+            "n_groups": gauc_result.get("n_groups", 0),
+            "total_samples": auc_result.get("total_samples", 0),
+            "AUC_valid": auc_result.get("AUC_valid", False),
+            "GAUC_valid": gauc_result.get("GAUC_valid", False),
+        }
+
+        diff = abs(comparison["difference_auc_gauc_weighted"])
+        if diff < 0.01:
+            comparison["similarity"] = "high"
+        elif diff < 0.05:
+            comparison["similarity"] = "medium"
+        else:
+            comparison["similarity"] = "low"
+
+        return comparison
+
+    @staticmethod
+    def get_summary(results: dict[str, dict[str, t.Any]]) -> dict[str, t.Any]:
+        """Creates summary of all metrics."""
+
+        summary = {
+            "total_targets": len(results),
+            "targets_with_valid_auc": 0,
+            "targets_with_valid_gauc": 0,
+            "average_auc": 0.0,
+            "average_gauc_weighted": 0.0,
+            "average_gauc_simple": 0.0,
+            "target_details": {},
+        }
+
+        auc_values = []
+        gauc_weighted_values = []
+        gauc_simple_values = []
+
+        for target_name, result in results.items():
+            if result.get("AUC_valid", False):
+                summary["targets_with_valid_auc"] += 1
+                auc_values.append(result.get("AUC", 0.0))
+
+            if result.get("GAUC_valid", False):
+                summary["targets_with_valid_gauc"] += 1
+                gauc_weighted_values.append(result.get("GAUCWeighted", 0.0))
+                gauc_simple_values.append(result.get("GAUCSimple", 0.0))
+
+            summary["target_details"][target_name] = {
+                "AUC": result.get("AUC", 0.0),
+                "AUC_valid": result.get("AUC_valid", False),
+                "GAUCWeighted": result.get("GAUCWeighted", 0.0),
+                "GAUCSimple": result.get("GAUCSimple", 0.0),
+                "GAUC_valid": result.get("GAUC_valid", False),
+                "n_groups": result.get("n_groups", 0),
+                "total_samples": result.get("total_samples", 0),
+                "positive_rate": result.get("positive_rate", 0.0),
+            }
+
+        if auc_values:
+            summary["average_auc"] = float(np.mean(auc_values))
+        if gauc_weighted_values:
+            summary["average_gauc_weighted"] = float(np.mean(gauc_weighted_values))
+        if gauc_simple_values:
+            summary["average_gauc_simple"] = float(np.mean(gauc_simple_values))
+
+        logger.info("=" * 50)
+        logger.info("METRICS SUMMARY:")
+        logger.info(f"Total targets: {summary['total_targets']}")
+        logger.info(f"Targets with valid AUC: {summary['targets_with_valid_auc']}")
+        logger.info(f"Targets with valid GAUC: {summary['targets_with_valid_gauc']}")
+        logger.info(f"Average AUC: {summary['average_auc']:.4f}")
+        logger.info(f"Average GAUC (weighted): {summary['average_gauc_weighted']:.4f}")
+        logger.info(f"Average GAUC (simple): {summary['average_gauc_simple']:.4f}")
+        logger.info("=" * 50)
+
+        return summary
