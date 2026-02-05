@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.target_config import TargetConfig
 
-from auto_tune_weights_pipeline.types_ import StrTablePath
+from auto_tune_weights_pipeline.types_ import StrPath
 
 
 @dataclass(frozen=True)
 class Metric(abc.ABC):
-    path_to_pool_cache: StrTablePath
+    path_to_pool_cache: StrPath
 
     @abc.abstractmethod
     def calculate_metric(
