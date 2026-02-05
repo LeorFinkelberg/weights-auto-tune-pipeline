@@ -43,6 +43,9 @@ filterwarnings = [
     "error",
     "ignore:DeprecationWarning",
 ]
+markers = [
+    "auc: marks AUC-tests (deselect with '-m \"not auc\"')",
+]
 
 [tool.coverage.run]
 source = ["src"]

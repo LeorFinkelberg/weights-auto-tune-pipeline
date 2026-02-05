@@ -21,6 +21,7 @@ class TestGaucCalculator:
             )
         }
 
+    @pytest.mark.auc
     def test_auc_calculating(
         self,
         test_data_dir,
