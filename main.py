@@ -5,7 +5,7 @@ from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.target_config import TargetConfig
 from auto_tune_weights_pipeline.events import Events
-from auto_tune_weights_pipeline.logging_ import setup_logging
+from auto_tune_weights_pipeline.logging_config import setup_logging
 
 setup_logging()
 
@@ -20,7 +20,7 @@ def main():
         )
     }
 
-    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_01_31.jsonl")
+    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_02_01.jsonl")
     results = gauc_metric.calculate_metric(
         target_configs=target_config,
         session_col_name=Columns.RID_COL_NAME,
