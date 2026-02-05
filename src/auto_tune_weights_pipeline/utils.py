@@ -1,4 +1,8 @@
 import typing as t
+import json
+
+import numpy as np
+import polars as pl
 from dataclasses import dataclass
 
 import yt.wrapper as yt
@@ -110,3 +114,41 @@ class YtReader:
             logger.warning(
                 f"File {str(_path_to_output)!r} already exists. The file was not downloaded ..."
             )
+
+
+class LogParser:
+    @staticmethod
+    def convert_message_to_dict(message: str) -> dict:
+        _message = (
+            message.replace("'", '"')
+            .replace("True", "true")
+            .replace("False", "false")
+            .replace("None", "null")
+        )
+        return json.loads(_message)
+
+    @staticmethod
+    def read_logs_to_aucs(
+        path_to_log: StrPath,
+        target_name: str = "watch_coverage_30s",
+        *,
+        field_name_with_records: str = "record",
+        field_name_with_messages: str = "message",
+        field_name_with_group_details: str = "group_details",
+        auc_message_pos: int = -10,
+    ) -> np.ndarray[float]:
+        """Reads app logs and converts to array of AUCs."""
+
+        auc_log: pl.DataFrame = pl.read_ndjson(path_to_log)
+        auc_message: str = auc_log.select(
+            pl.col(field_name_with_records).struct.field(field_name_with_messages)
+        ).to_dicts()[auc_message_pos][field_name_with_messages]
+        auc_logs_parsed: dict = LogParser.convert_message_to_dict(auc_message)
+        aucs = np.array(
+            [
+                group["auc"]
+                for group in auc_logs_parsed[target_name][field_name_with_group_details]
+            ]
+        )
+
+        return aucs
