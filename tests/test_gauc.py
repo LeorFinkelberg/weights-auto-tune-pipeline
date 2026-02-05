@@ -29,7 +29,7 @@ class TestGaucCalculator:
         }
 
     @pytest.mark.auc
-    def test_auc_calculate__watch_coverage_30s__2records(
+    def test_calculate__watch_coverage_30s__2records__auc_0_0(
         self,
         test_data_dir,
         target_config_watch_coverage_30s,
@@ -85,7 +85,7 @@ class TestGaucCalculator:
             ("pool_cache_2026_01_31__1972099784_3936_1769880273297_76459.jsonl",),
         ],
     )
-    def test_auc_calculate__watch_coverage_30s__3records(
+    def test_calculate__watch_coverage_30s__3records__auc_0_0(
         self,
         pool_cache_file,
         test_data_dir,
@@ -133,7 +133,7 @@ class TestGaucCalculator:
         }
 
     @pytest.mark.auc
-    def test_auc_calculate__watch_coverage_30s__5records(
+    def test_calculate__watch_coverage_30s__5records__auc_0_0(
         self,
         test_data_dir,
         target_config_watch_coverage_30s,
@@ -179,4 +179,53 @@ class TestGaucCalculator:
             "target": target_event,
             "total_positives": 2,
             "total_samples": 5,
+        }
+
+    @pytest.mark.auc
+    def test_calculate__watch_coverage_30s__5records__auc_1_0(
+        self,
+        test_data_dir,
+        target_config_watch_coverage_30s,
+    ):
+        target_event = "watch_coverage_30s"
+        path_to_pool_cache_file = test_data_dir.joinpath(
+            "./AUC=1_0/pool_cache_2026_01_31__1550856805_3971_1769878063144_51518.jsonl"
+        )
+        rid = _get_rid_from_pool_cache_file_name(path_to_pool_cache_file)
+
+        gauc_metric = GAUC(path_to_pool_cache=path_to_pool_cache_file)
+        results = gauc_metric.calculate_metric(
+            target_configs=target_config_watch_coverage_30s,
+            session_col_name=Columns.RID_COL_NAME,
+            nav_screen="video_for_you",
+            platform="vk_video_android",
+            calculate_regular_auc=True,
+        )
+
+        assert results[target_event] == {
+            "AUC": 1.0,
+            "AUC_error": None,
+            "AUC_valid": True,
+            "GAUCSimple": 1.0,
+            "GAUCWeighted": 1.0,
+            "GAUC_valid": True,
+            "group_details": [
+                {
+                    "auc": 1.0,
+                    "negatives": 1,
+                    "positive_rate": 0.5,
+                    "positives": 1,
+                    "session_id": rid,
+                    "size": 2,
+                },
+            ],
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "n_groups": 1,
+            "positive_rate": 0.5,
+            "std": 0.0,
+            "target": target_event,
+            "total_positives": 1,
+            "total_samples": 2,
         }
