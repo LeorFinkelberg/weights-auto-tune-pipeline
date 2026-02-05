@@ -9,14 +9,11 @@ from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 
 from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.logging_ import setup_logging
 from auto_tune_weights_pipeline.metrics.base import Metric
 from auto_tune_weights_pipeline.target_config import (
     TargetConfig,
     DEFAULT_TARGETS_CONFIG,
 )
-
-setup_logging()
 
 
 class GAUC(Metric):

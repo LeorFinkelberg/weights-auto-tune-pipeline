@@ -13,9 +13,6 @@ from loguru import logger
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import YtProxyClusterNames
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
-from auto_tune_weights_pipeline.logging_ import setup_logging
-
-setup_logging()
 
 
 # TODO: fixme

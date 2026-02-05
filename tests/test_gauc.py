@@ -34,7 +34,7 @@ class TestGaucCalculator:
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
-        """Rid = 4209389434.2808.1769884974477.49306."""
+        # rid = 4209389434.2808.1769884974477.49306
         target_event = "watch_coverage_30s"
         path_to_pool_cache_file = test_data_dir.joinpath(
             "./AUC=0_0/pool_cache_2026_01_31__4209389434_2808_1769884974477_49306.jsonl"
@@ -92,8 +92,9 @@ class TestGaucCalculator:
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
-        """Rid = 918960451.4009.1769879722682.60050
-        1972099784.3936.1769880273297.76459."""
+        # rid =
+        #     918960451.4009.1769879722682.60050
+        #     1972099784.3936.1769880273297.76459
         target_event = "watch_coverage_30s"
         path_to_pool_cache_file = test_data_dir.joinpath(f"./AUC=0_0/{pool_cache_file}")
         rid = _get_rid_from_pool_cache_file_name(path_to_pool_cache_file)
@@ -141,7 +142,7 @@ class TestGaucCalculator:
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
-        """Rid = 3808953996.3934.1769877723930.44275."""
+        # rid = 3808953996.3934.1769877723930.44275
         target_event = "watch_coverage_30s"
         path_to_pool_cache_file = test_data_dir.joinpath(
             "./AUC=0_0/pool_cache_2026_01_31__3808953996_3934_1769877723930_44275.jsonl"
@@ -191,7 +192,7 @@ class TestGaucCalculator:
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
-        """Rid = 3000127673.4130.1769889692846.13927."""
+        # rid = 3000127673.4130.1769889692846.13927
         target_event = "watch_coverage_30s"
         path_to_pool_cache_file = test_data_dir.joinpath(
             "./AUC=0_5/pool_cache_2026_01_31__3000127673_4130_1769889692846_13927.jsonl"
@@ -249,8 +250,9 @@ class TestGaucCalculator:
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
-        """Rid = 1550856805.3971.1769878063144.51518
-        612205853.3532.1769849263613.98392."""
+        # rid =
+        #     1550856805.3971.1769878063144.51518
+        #     612205853.3532.1769849263613.98392
         target_event = "watch_coverage_30s"
         path_to_pool_cache_file = test_data_dir.joinpath(f"./AUC=1_0/{pool_cache_file}")
         rid = _get_rid_from_pool_cache_file_name(path_to_pool_cache_file)
