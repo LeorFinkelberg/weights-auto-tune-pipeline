@@ -182,6 +182,55 @@ class TestGaucCalculator:
         }
 
     @pytest.mark.auc
+    def test_calculate__watch_coverage_30s__3records__auc_0_5(
+        self,
+        test_data_dir,
+        target_config_watch_coverage_30s,
+    ):
+        target_event = "watch_coverage_30s"
+        path_to_pool_cache_file = test_data_dir.joinpath(
+            "./AUC=0_5/pool_cache_2026_01_31__3000127673_4130_1769889692846_13927.jsonl"
+        )
+        rid = _get_rid_from_pool_cache_file_name(path_to_pool_cache_file)
+
+        gauc_metric = GAUC(path_to_pool_cache=path_to_pool_cache_file)
+        results = gauc_metric.calculate_metric(
+            target_configs=target_config_watch_coverage_30s,
+            session_col_name=Columns.RID_COL_NAME,
+            nav_screen="video_for_you",
+            platform="vk_video_android",
+            calculate_regular_auc=True,
+        )
+
+        assert results[target_event] == {
+            "AUC": 0.5,
+            "AUC_error": None,
+            "AUC_valid": True,
+            "GAUCSimple": 0.5,
+            "GAUCWeighted": 0.5,
+            "GAUC_valid": True,
+            "group_details": [
+                {
+                    "auc": 0.5,
+                    "negatives": 2,
+                    "positive_rate": 0.3333333333333333,
+                    "positives": 1,
+                    "session_id": rid,
+                    "size": 3,
+                },
+            ],
+            "max": 0.5,
+            "median": 0.5,
+            "min": 0.5,
+            "n_groups": 1,
+            "positive_rate": 0.3333333333333333,
+            "std": 0.0,
+            "target": target_event,
+            "total_positives": 1,
+            "total_samples": 3,
+        }
+
+    @pytest.mark.auc
     @pytest.mark.parametrize(
         ["pool_cache_file"],
         [
