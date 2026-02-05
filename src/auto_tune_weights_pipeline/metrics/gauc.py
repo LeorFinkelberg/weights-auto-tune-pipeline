@@ -294,7 +294,7 @@ class GAUC(Metric):
                 y_true = group_data[label_col_name].to_numpy()
                 y_score = group_data[score_col_name].to_numpy()
 
-                order = np.argsort(y_score)[::-1]
+                order = np.argsort(y_score)
                 y_true_sorted = y_true[order]
 
                 n_pos = np.sum(y_true_sorted)
