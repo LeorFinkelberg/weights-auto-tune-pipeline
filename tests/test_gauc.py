@@ -182,15 +182,21 @@ class TestGaucCalculator:
         }
 
     @pytest.mark.auc
-    def test_calculate__watch_coverage_30s__5records__auc_1_0(
+    @pytest.mark.parametrize(
+        ["pool_cache_file"],
+        [
+            ("pool_cache_2026_01_31__1550856805_3971_1769878063144_51518.jsonl",),
+            ("pool_cache_2026_01_31__612205853_3532_1769849263613_98392.jsonl",),
+        ],
+    )
+    def test_calculate__watch_coverage_30s__2records__auc_1_0(
         self,
+        pool_cache_file,
         test_data_dir,
         target_config_watch_coverage_30s,
     ):
         target_event = "watch_coverage_30s"
-        path_to_pool_cache_file = test_data_dir.joinpath(
-            "./AUC=1_0/pool_cache_2026_01_31__1550856805_3971_1769878063144_51518.jsonl"
-        )
+        path_to_pool_cache_file = test_data_dir.joinpath(f"./AUC=1_0/{pool_cache_file}")
         rid = _get_rid_from_pool_cache_file_name(path_to_pool_cache_file)
 
         gauc_metric = GAUC(path_to_pool_cache=path_to_pool_cache_file)
