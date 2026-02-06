@@ -13,14 +13,13 @@ setup_logging()
 # TODO: add @click
 def main():
     target_config: t.Final[dict] = {
-        "watch_coverage_30s": TargetConfig(
-            name="watch_coverage_30s",
-            event_name=Events.WATCH_COVERAGE_RECORD,
-            view_threshold_sec=30.0,
-        )
+        "action_play": TargetConfig(
+            name="action_play",
+            event_name=Events.ACTION_PLAY,
+        ),
     }
 
-    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_02_03.jsonl")
+    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_02_01.jsonl")
     results = gauc_metric.calculate_metric(
         target_configs=target_config,
         session_col_name=Columns.RID_COL_NAME,
@@ -29,9 +28,7 @@ def main():
         calculate_regular_auc=True,
     )
     logger.info(results)
-
-    summary = gauc_metric.get_summary(results)
-    print(summary)
+    print(gauc_metric.get_summary(results))
 
 
 if __name__ == "__main__":
