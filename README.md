@@ -11,6 +11,8 @@ $ cd <repo>
 $ uv sync
 $ uv run marimo run
 ```
+#### Расчет GAUC
+
 In `marimo` session ...
 ```python
 from auto_tune_weights_pipeline.columns import Columns
@@ -38,6 +40,31 @@ results = gauc_metric.calculate_metric(
 summary = gauc_metric.get_summary(results)
 print(summary)
 ```
+
+#### Обучение ML-модели
+```python
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split
+
+from auto_tune_weights_pipeline.maxtrix_builder import AutoMatrixBuilder
+
+matrix_builder = AutoMatrixBuilder(
+    path_to_pool_cache_with_features="data/pool_cache_with_features_2026_02_01.jsonl"
+)
+_X, _y = matrix_builder.get_Xy_matrix(target_label="actionPlay")
+X = _X.to_numpy()
+y = _y.to_numpy()
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+logger.debug("Training model ...")
+clf = LogisticRegressionCV()
+clf.fit(X_train, y_train)
+logger.debug(roc_auc_score(y_test, clf.predict(X_test)))
+```
+
 ### _Terminal_
 ```bash
 $ git clone <repo>
