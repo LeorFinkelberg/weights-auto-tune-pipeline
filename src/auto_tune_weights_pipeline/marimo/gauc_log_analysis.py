@@ -116,10 +116,9 @@ def _(mo):
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_01_action_play: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_01_action_play.log",
-        target_name="action_play",
-    )
+    aucs_2026_02_01_action_play: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_01_action_play.log"
+    ).read_logs_to_aucs(target_name="action_play")
     return (aucs_2026_02_01_action_play,)
 
 
@@ -148,28 +147,25 @@ def _(mo):
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_01_watch_coverage_30s: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_01_watch_coverage_30s.log",
-        target_name="watch_coverage_30s",
-    )
+    aucs_2026_02_01_watch_coverage_30s: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_01_watch_coverage_30s.log"
+    ).read_logs_to_aucs(target_name="watch_coverage_30s")
     return (aucs_2026_02_01_watch_coverage_30s,)
 
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_02_watch_coverage_30s: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_02_watch_coverage_30s.log",
-        target_name="watch_coverage_30s",
-    )
+    aucs_2026_02_02_watch_coverage_30s: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_02_watch_coverage_30s.log"
+    ).read_logs_to_aucs(target_name="watch_coverage_30s")
     return (aucs_2026_02_02_watch_coverage_30s,)
 
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_03_watch_coverage_30s: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_03_watch_coverage_30s.log",
-        target_name="watch_coverage_30s",
-    )
+    aucs_2026_02_03_watch_coverage_30s: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_03_watch_coverage_30s.log"
+    ).read_logs_to_aucs(target_name="watch_coverage_30s")
     return (aucs_2026_02_03_watch_coverage_30s,)
 
 
@@ -224,10 +220,9 @@ def _(mo):
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_01_watch_coverage_60s: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_01_watch_coverage_60s.log",
-        target_name="watch_coverage_60s",
-    )
+    aucs_2026_02_01_watch_coverage_60s: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_01_watch_coverage_60s.log"
+    ).read_logs_to_aucs(target_name="watch_coverage_60s")
     return (aucs_2026_02_01_watch_coverage_60s,)
 
 
@@ -256,9 +251,9 @@ def _(mo):
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_01_like: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_01_like.log", target_name="like"
-    )
+    aucs_2026_02_01_like: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_01_like.log"
+    ).read_logs_to_aucs(target_name="like")
     return (aucs_2026_02_01_like,)
 
 
@@ -287,9 +282,9 @@ def _(mo):
 
 @app.cell
 def _(LogParser, np):
-    aucs_2026_02_01_dislike: np.ndarray = LogParser.read_logs_to_aucs(
-        "./logs/logs_for_pool_cache_2026_02_01_dislike.log", target_name="dislike"
-    )
+    aucs_2026_02_01_dislike: np.ndarray = LogParser(
+        path_to_log_file="./logs/logs_for_pool_cache_2026_02_01_dislike.log"
+    ).read_logs_to_aucs(target_name="dislike")
     return (aucs_2026_02_01_dislike,)
 
 

@@ -3,13 +3,14 @@ import json
 
 import numpy as np
 import polars as pl
-from dataclasses import dataclass
 
 import yt.wrapper as yt
 
 from pathlib import Path
 from loguru import logger
 
+from enum import StrEnum
+from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import YtProxyClusterNames
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
@@ -113,7 +114,26 @@ class YtReader:
             )
 
 
+class _SummaryLogFields(StrEnum):
+    GAUC_SIMPLE = "GAUCSimple"
+    GAUC_WEIGHTED = "GAUCWeighted"
+    N_GROUPS = "n_groups"
+    STD = "std"
+    MIN = "min"
+    MAX = "max"
+    MEDIAN = "median"
+    GROUP_DETAILS = "group_details"
+    GAUC_VALID = "GAUC_valid"
+
+    @classmethod
+    def get_values(cls) -> tuple[str, ...]:
+        return tuple(member.value for member in cls)
+
+
 class LogParser:
+    def __init__(self, path_to_log_file: StrPath) -> None:
+        self._auc_log = pl.read_ndjson(path_to_log_file)
+
     @staticmethod
     def convert_message_to_dict(message: str) -> dict:
         _message = (
@@ -124,26 +144,43 @@ class LogParser:
         )
         return json.loads(_message)
 
-    @staticmethod
+    def get_value_from_summary_log_fild(
+        self,
+        target_name: str = "watch_coverage_30s",
+        *,
+        summary_log_fild: str = "group_details",
+        field_name_with_records: str = "record",
+        field_name_with_messages: str = "message",
+        auc_message_pos: int = -10,
+    ) -> t.Union[float, dict]:
+        auc_message: str = self._auc_log.select(
+            pl.col(field_name_with_records).struct.field(field_name_with_messages)
+        ).to_dicts()[auc_message_pos][field_name_with_messages]
+        auc_logs_parsed: dict = self.convert_message_to_dict(auc_message)
+        _logs = auc_logs_parsed[target_name]
+
+        if not summary_log_fild in _SummaryLogFields.get_values():
+            raise ValueError(f"Error! Not found field: {summary_log_fild!r}")
+
+        return _logs[summary_log_fild]
+
     def read_logs_to_aucs(
-        path_to_log: StrPath,
+        self,
         target_name: str = "watch_coverage_30s",
         *,
         field_name_with_records: str = "record",
         field_name_with_messages: str = "message",
         field_name_with_group_details: str = "group_details",
         auc_message_pos: int = -10,
-    ) -> np.ndarray[float]:
+    ) -> np.ndarray:
         """Reads app logs and converts to array of AUCs."""
 
-        auc_log: pl.DataFrame = pl.read_ndjson(path_to_log)
-        auc_message: str = auc_log.select(
-            pl.col(field_name_with_records).struct.field(field_name_with_messages)
-        ).to_dicts()[auc_message_pos][field_name_with_messages]
-        auc_logs_parsed: dict = LogParser.convert_message_to_dict(auc_message)
-        _logs = auc_logs_parsed[target_name]
-        aucs = np.array(
-            [group["auc"] for group in _logs[field_name_with_group_details]]
+        _logs = self.get_value_from_summary_log_fild(
+            target_name,
+            summary_log_fild=field_name_with_group_details,
+            field_name_with_records=field_name_with_records,
+            field_name_with_messages=field_name_with_messages,
+            auc_message_pos=auc_message_pos,
         )
 
-        return aucs
+        return np.array([group["auc"] for group in _logs])
