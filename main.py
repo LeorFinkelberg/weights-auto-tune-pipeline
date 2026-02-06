@@ -20,7 +20,7 @@ def main():
         )
     }
 
-    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_02_01.jsonl")
+    gauc_metric = GAUC(path_to_pool_cache="./data/pool_cache_2026_02_03.jsonl")
     results = gauc_metric.calculate_metric(
         target_configs=target_config,
         session_col_name=Columns.RID_COL_NAME,

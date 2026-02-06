@@ -141,11 +141,9 @@ class LogParser:
             pl.col(field_name_with_records).struct.field(field_name_with_messages)
         ).to_dicts()[auc_message_pos][field_name_with_messages]
         auc_logs_parsed: dict = LogParser.convert_message_to_dict(auc_message)
+        _logs = auc_logs_parsed[target_name]
         aucs = np.array(
-            [
-                group["auc"]
-                for group in auc_logs_parsed[target_name][field_name_with_group_details]
-            ]
+            [group["auc"] for group in _logs[field_name_with_group_details]]
         )
 
         return aucs
