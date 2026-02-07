@@ -11,7 +11,7 @@ $ cd <repo>
 $ uv sync
 $ uv run marimo run
 ```
-#### Расчет GAUC
+#### _Расчет GAUC_
 
 In `marimo` session ...
 ```python
@@ -41,28 +41,43 @@ summary = gauc_metric.get_summary(results)
 print(summary)
 ```
 
-#### Обучение ML-модели
+#### _Обучение ML-модели_
+
 ```python
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, QuantileTransformer
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 
+from auto_tune_weights_pipeline.events import Events
 from auto_tune_weights_pipeline.maxtrix_builder import AutoMatrixBuilder
 
-matrix_builder = AutoMatrixBuilder(
-    path_to_pool_cache_with_features="data/pool_cache_with_features_2026_02_01.jsonl"
-)
-_X, _y = matrix_builder.get_Xy_matrix(target_label="actionPlay")
-X = _X.to_numpy()
-y = _y.to_numpy()
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+X_train, y_train, X_test, y_test = AutoMatrixBuilder.train_test_split(
+    path_to_pool_cache_train="./data/pool_cache_with_features_2026_02_01_train.jsonl",
+    path_to_pool_cache_test="./data/pool_cache_with_features_2026_02_02_test.jsonl",
+    target_label=Events.ACTION_PLAY,
+    max_features=213,
 )
 
-logger.debug("Training model ...")
-clf = LogisticRegressionCV()
-clf.fit(X_train, y_train)
-logger.debug(roc_auc_score(y_test, clf.predict(X_test)))
+pipeline = Pipeline(
+    [
+        ("imputer", SimpleImputer()),
+        ("scaler", StandardScaler()),
+        (
+            "logRegCV",
+            LogisticRegression(
+                C=10.0,
+                l1_ratio=0.0,
+                max_iter=5_000,
+            ),
+        ),
+    ]
+)
+
+print("Training model ...")
+pipeline.fit(X_train, y_train)
+print("ROC AUC: {:.5f}".format(roc_auc_score(y_test, pipeline.predict(X_test))))
 ```
 
 ### _Terminal_
@@ -74,5 +89,6 @@ $ uv sync
 ### _Tests_
 Для запуска тестов выполнить
 ```bash
-$ nox -s test
+$ pytest
+$ pytest -vv -m auc  # only for AUC computing test
 ```
