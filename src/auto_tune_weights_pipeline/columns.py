@@ -9,3 +9,4 @@ class Columns(StrEnum):
     NAV_SCREEN_COL_NAME = "navScreen"
     PLATFORM_COL_NAME = "platform"
     FORMULA_PATH_COL_NAME = "formulaPath"
+    FEATURES_COL_NAME = "features"

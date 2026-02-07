@@ -1,27 +1,36 @@
 import typing as t
 import polars as pl
 import numpy as np
+
+from typing_extensions import override
 from pathlib import Path
+from tqdm import tqdm
 from loguru import logger
+from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.types_ import StrPath
 
 
 class MatrixBuilder:
-    def __init__(self, path_to_pool_cache_with_features: t.Union[str, Path]):
-        self.data_path = Path(path_to_pool_cache_with_features)
+    def __init__(
+        self,
+        path_to_pool_cache_features: StrPath,
+    ) -> None:
+        self.data_path = Path(path_to_pool_cache_features)
         self.df: t.Optional[pl.DataFrame] = None
+
         self._load_data()
 
     def _load_data(self) -> None:
         if not self.data_path.exists():
             raise FileNotFoundError(f"File not found: {self.data_path}")
 
-        logger.info(f"Loading {self.data_path}")
+        logger.info(f"Loading data {self.data_path}")
         self.df = pl.read_ndjson(str(self.data_path))
         logger.info(f"Loaded {len(self.df)} rows")
 
     def get_Xy_matrix(
         self,
-        target_label: str = "actionPlay",
+        target_label: str = Events.ACTION_PLAY,
         view_time_threshold: t.Optional[int] = None,
         num_features: int = 256,
     ) -> t.Tuple[pl.DataFrame, pl.Series]:
@@ -66,7 +75,7 @@ class MatrixBuilder:
 
         features_column = self.df["features"].to_list()
 
-        for row_idx, feature_pairs in enumerate(features_column):
+        for row_idx, feature_pairs in tqdm(enumerate(features_column)):
             if feature_pairs is None:
                 continue
 
@@ -80,6 +89,8 @@ class MatrixBuilder:
                     try:
                         feat_idx = int(pair[0])
                         feat_value = float(pair[1])
+                        logger.debug(feat_idx)
+                        logger.debug(feat_value)
 
                         if 0 <= feat_idx < num_features:
                             feature_matrix[row_idx, feat_idx] = feat_value
@@ -171,9 +182,29 @@ class MatrixBuilder:
 
 
 class AutoMatrixBuilder(MatrixBuilder):
+    @classmethod
+    def train_test_split(
+        cls,
+        path_to_pool_cache_train: StrPath,
+        path_to_pool_cache_test: StrPath,
+        target_label: str,
+        max_features: int,
+    ):
+        Xys = []
+        for path_to_pool_cache in (path_to_pool_cache_train, path_to_pool_cache_test):
+            Xys.extend(
+                cls(path_to_pool_cache_features=path_to_pool_cache).get_Xy_matrix(
+                    target_label=target_label,
+                    max_features=max_features,
+                )
+            )
+
+        return tuple(feature_or_target.to_numpy() for feature_or_target in Xys)
+
+    @override
     def get_Xy_matrix(
         self,
-        target_label: str = "actionPlay",
+        target_label: str = Events.ACTION_PLAY,
         view_time_threshold: t.Optional[int] = None,
         max_features: int = 500,
         min_frequency: int = 10,
