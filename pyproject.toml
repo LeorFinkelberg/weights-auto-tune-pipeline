@@ -5,6 +5,7 @@ description = "..."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "catboost>=1.2.8",
     "ipython>=9.10.0",
     "loguru>=0.7.3",
     "marimo>=0.19.7",
@@ -15,6 +16,7 @@ dependencies = [
     "polars>=1.37.1",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
+    "requests>=2.32.5",
     "scikit-learn>=1.8.0",
     "tqdm>=4.67.2",
     "typing-extensions>=4.15.0",
