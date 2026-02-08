@@ -52,7 +52,9 @@ class CatBoostPoolProcessor:
         logger.info(f"Extracted pairs: {len(pairs)}")
 
         logger.info("Group creating ...")
-        group_id = np.zeros(len(X), dtype=np.int32)
+        keys = self.features_df["key"].to_numpy()
+        unique_keys, group_ids = np.unique(keys, return_inverse=True)
+        logger.info(f"Unique groups: {len(unique_keys)}")
 
         logger.info("Label creating ...")
         y = np.zeros(len(X), dtype=np.float32)
@@ -62,16 +64,23 @@ class CatBoostPoolProcessor:
         if y.max() > 0:
             y = y / y.max()
 
+        logger.debug(f"Label stats - min: {y.min()}, max: {y.max()}, mean: {y.mean()}")
+        logger.debug(
+            f"Group stats - min size: {min(np.bincount(group_ids))}, max size: {max(np.bincount(group_ids))}"
+        )
+
         logger.info("Catboost Pool creating ...")
         pool = cb.Pool(
             data=X,
             label=y,
-            group_id=group_id,
+            group_id=group_ids,
             pairs=pairs,
             feature_names=[f"f{i}" for i in range(X.shape[1])],
         )
         logger.info(
-            "Data is prepared: {} samples, {} pairs".format(X.shape[0], len(pairs))
+            "Data is prepared: {} samples, {} pairs, {} groups".format(
+                X.shape[0], len(pairs), len(unique_keys)
+            )
         )
 
         return pool
@@ -109,7 +118,7 @@ class CatboostTrainer:
         iterations: int = 300,
         learning_rate: float = 0.05,
         depth: int = 6,
-        loss_function: str = LossFunctions.PAIR_LOGIT,
+        loss_function: str = LossFunctions.PAIR_LOGIT_PAIRWISE,
         verbose=100,
         random_seed: int = RANDOM_SEED,
         task_type: CatboostTaskTypes = CatboostTaskTypes.CPU,
@@ -147,9 +156,14 @@ class CatboostTrainer:
             logger.warning("Model could not be saved ...")
 
     def predict(self, pool: cb.Pool):
+        predicts = self._softmax(self.ranker.predict(pool))
+        logger.debug(predicts.size)
+        logger.debug(predicts.min())
+        logger.debug(predicts.mean())
+        logger.debug(predicts.max())
         return self._softmax(self.ranker.predict(pool))
 
     @staticmethod
-    def _softmax(values) -> float:
+    def _softmax(values) -> np.ndarray[float]:
         exp_ = np.exp(values - np.max(values))
         return exp_ / exp_.sum()

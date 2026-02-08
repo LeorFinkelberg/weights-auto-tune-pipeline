@@ -127,7 +127,7 @@ class FeaturesPairsGenerator:
 
         return result
 
-    def process_to_features_table(self, df: pl.DataFrame) -> pl.DataFrame:
+    def generate_features_table(self, df: pl.DataFrame) -> pl.DataFrame:
         logger.info(f"Feature table creating with {len(df)} rows ...")
 
         filtered_df = df.filter(

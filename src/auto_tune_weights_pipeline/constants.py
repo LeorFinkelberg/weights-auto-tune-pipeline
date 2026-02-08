@@ -11,6 +11,7 @@ DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS = (
 
 class LossFunctions(StrEnum):
     PAIR_LOGIT = "PairLogit"
+    PAIR_LOGIT_PAIRWISE = "PairLogitPairwise"
 
 
 class CatboostTaskTypes(StrEnum):
