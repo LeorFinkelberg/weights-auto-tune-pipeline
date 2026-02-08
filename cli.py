@@ -60,7 +60,7 @@ def main(
                 path_to_feature_names=path_to_feature_names,
             ),
             catboost_params={
-                "iterations": 10,
+                "iterations": 150,
                 "l2_leaf_reg": 3,
                 "learning_rate": 0.05,
                 "border_count": 32,
