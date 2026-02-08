@@ -2,13 +2,14 @@ import warnings
 
 import requests
 import polars as pl
-import math
+import numpy as np
 import urllib3
 
 from loguru import logger
 from pathlib import Path
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.constants import (
+    BIG_NEGATIVE_DEFAULT_VALUE,
     DICTIONARY_HUB_URL,
     DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS,
 )
@@ -20,11 +21,6 @@ def _disable_warnings():
 
 
 _disable_warnings()
-
-
-def _disable_warnings(self):
-    warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL.*")
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class FeaturesPairsGenerator:
@@ -49,6 +45,7 @@ class FeaturesPairsGenerator:
     def _map_feature_names_to_feature_ids(
         self,
         path_to_feature_names: StrPath,
+        n: int = 30,
     ) -> list[int]:
         feature_name_to_feature_id: dict[str, int] = requests.post(
             url=self.dictionary_hub_url,
@@ -69,78 +66,74 @@ class FeaturesPairsGenerator:
             feature_name_to_feature_id[feature_name] for feature_name in features
         ]
 
-        logger.info("Feature ids: {}".format(",".join(str(id_) for id_ in feature_ids)))
+        _first_n_features = ",".join(str(id_) for id_ in feature_ids[:n])
+        _last_n_features = ",".join(str(id_) for id_ in feature_ids[-n:])
+
+        logger.info(
+            "Feature ids: {} ... {}".format(_first_n_features, _last_n_features)
+        )
         logger.info("Features count: {}".format(len(feature_ids)))
 
         return feature_ids
 
     @staticmethod
-    def consumption_time(view_time_sec: float, duration: float) -> float:
-        if view_time_sec <= 0.0:
-            return 0.0
+    def consumption_time_batch(view_times, durations):
+        view_times_np = np.array(view_times, dtype=np.float64)
+        durations_np = np.array(durations, dtype=np.float64)
 
-        magic_duration = (
-            1.27494682e-05 * duration * duration
-            + 2.29489044e-02 * duration
-            + 3.18074092e01
-        )
+        result = np.zeros_like(view_times_np)
+        mask = view_times_np > 0.0
 
-        if duration > 7200.0:
-            noisy_watching_threshold = 850.0
-        else:
-            noisy_watching_threshold = min(magic_duration, duration / 2.0)
+        if not np.any(mask):
+            return result.tolist()
 
-        click_weight = 0.01 * noisy_watching_threshold
-        regain_coeff = duration / (duration - noisy_watching_threshold + click_weight)
-        nw_time = regain_coeff * max(
-            view_time_sec - noisy_watching_threshold, click_weight
-        )
+        v = view_times_np[mask]
+        d = durations_np[mask]
+
+        magic_duration = 1.27494682e-05 * d * d + 2.29489044e-02 * d + 3.18074092e01
+        nwt = np.where(d > 7200.0, 850.0, np.minimum(magic_duration, d / 2.0))
+
+        click_weight = 0.01 * nwt
+        regain_coeff = d / (d - nwt + click_weight)
+        nw_time = regain_coeff * np.maximum(v - nwt, click_weight)
 
         smooth = 0.25
         U = 7200.0
         C = 600.0
-        this_clamp = min(nw_time, U)
-        max_clamp = min(duration, U)
-        target_regain = math.pow(U, 1.0 - smooth)
+        this_clamp = np.minimum(nw_time, U)
+        max_clamp = np.minimum(d, U)
+        target_regain = np.power(U, 1.0 - smooth)
         max_target = U / C
 
-        return (
+        result[mask] = (
             this_clamp
             * max_target
-            / ((math.pow(max_clamp, smooth) + 1e-7) * target_regain)
+            / ((np.power(max_clamp, smooth) + 1e-7) * target_regain)
         )
 
-    @staticmethod
-    def to_label_weight(targets: list[tuple[str, float, float]]) -> tuple[str, str]:
-        if len(targets) > 1:
-            label = str(int(sum(2**i * t[1] for i, t in enumerate(targets))))
-            weight = "1"
-        else:
-            label = str(targets[0][1])
-            weight = str(targets[0][2])
-        return label, weight
+        return result.tolist()
 
-    @staticmethod
-    def to_targets(
-        targets: list[tuple[str, float, float]],
-    ) -> list[tuple[str, float, float]]:
-        if len(targets) > 1:
-            return targets
-        else:
-            return [("single_target", targets[0][1], targets[0][2])]
+    def extract_features_dict(self, features_list: list) -> dict[int, float]:
+        result = {fid: -3.4e38 for fid in self.features}
 
-    @staticmethod
-    def extract_feature_value(features_dict: dict, feature_id: int) -> float:
-        value = features_dict.get(feature_id)
-        if value is None:
-            return -3.4e38
-        return round(value, 8)
+        if not features_list:
+            return result
 
-    def process_dataframe(self, df: pl.DataFrame) -> pl.DataFrame:
+        for item in features_list:
+            fid = int(item[0])
+            value = item[1]
+            if fid in self.features and value is not None:
+                result[fid] = round(float(value), 8)
+
+        return result
+
+    def process_to_features_table(self, df: pl.DataFrame) -> pl.DataFrame:
+        logger.info(f"Feature table creating with {len(df)} rows ...")
+
         filtered_df = df.filter(
-            (pl.col("typeId") == 1776)
-            & (pl.col("userType") == "vk")
-            & (pl.col("recommenderId") == 200)
+            (pl.col("typeId") == self.type_id)
+            & (pl.col("userType") == self.user_type)
+            & (pl.col("recommenderId") == self.recommender_id)
             & pl.col("events")
             .list.eval(
                 pl.element().is_in(
@@ -150,107 +143,114 @@ class FeaturesPairsGenerator:
             .list.any()
         )
 
-        def extract_all_features(row: dict) -> dict:
-            features_list = row["features"]
-            result = {}
+        if len(filtered_df) == 0:
+            return pl.DataFrame()
 
-            features_dict = {}
-            if features_list:
-                for item in features_list:
-                    if isinstance(item, dict):
-                        key = item.get("key")
-                        value = item.get("value")
-                        if key is not None:
-                            features_dict[int(key)] = value
-                    elif isinstance(item, (list, tuple)) and len(item) >= 2:
-                        features_dict[int(item[0])] = item[1]
-
-            for feature_id in self.features:
-                try:
-                    value = float(features_dict.get(feature_id))
-                except (ValueError, TypeError):
-                    value = -3.4e38
-                result[f"feature_{feature_id}"] = round(value, 8)
-
-            events = row["events"]
-            has_like = "actionLike" in events and "actionUnlike" not in events
-            has_dislike = "actionDislike" in events and "actionUndislike" not in events
-
-            result["like_target"] = 1.0 if has_like else 0.0
-            result["dislike_target"] = 0.0 if has_dislike else 1.0
-            result["consumption_time_target"] = self.consumption_time(
-                row["viewTimeSec"], row["durationSeconds"]
-            )
-
-            label_bits = ""
-            label_bits += "1" if result["like_target"] > 0.5 else "0"
-            label_bits += "1" if result["dislike_target"] > 0.5 else "0"
-
-            result["label"] = label_bits
-
-            feature_values = [str(result[f"feature_{fid}"]) for fid in self.features]
-            result["value"] = "\t".join([label_bits, "1", *feature_values])
-
-            result["targets"] = [
-                {"name": "like", "target": result["like_target"], "weight": 5.0},
-                {"name": "dislike", "target": result["dislike_target"], "weight": 14.0},
-                {
-                    "name": "consumption_time",
-                    "target": result["consumption_time_target"],
-                    "weight": 0.41,
-                },
-            ]
-
-            return result
-
-        processed = filtered_df.with_columns(
+        filtered_df = filtered_df.with_columns(
             [
-                pl.struct(["features", "events", "viewTimeSec", "durationSeconds"])
-                .map_elements(
-                    extract_all_features,
-                    return_dtype=pl.Struct(
-                        [
-                            *[
-                                pl.Field(f"feature_{fid}", pl.Float64)
-                                for fid in self.features
-                            ],
-                            pl.Field("like_target", pl.Float64),
-                            pl.Field("dislike_target", pl.Float64),
-                            pl.Field("consumption_time_target", pl.Float64),
-                            pl.Field("label", pl.Utf8),
-                            pl.Field("value", pl.Utf8),
-                            pl.Field(
-                                "targets",
-                                pl.List(
-                                    pl.Struct(
-                                        [
-                                            pl.Field("name", pl.Utf8),
-                                            pl.Field("target", pl.Float64),
-                                            pl.Field("weight", pl.Float64),
-                                        ]
-                                    )
-                                ),
-                            ),
-                        ]
+                # like target
+                (
+                    pl.when(
+                        pl.col("events").list.contains("actionLike")
+                        & ~pl.col("events").list.contains("actionUnlike")
+                    )
+                    .then(1.0)
+                    .otherwise(0.0)
+                ).alias("like_target"),
+                # dislike target
+                (
+                    pl.when(
+                        pl.col("events").list.contains("actionDislike")
+                        & ~pl.col("events").list.contains("actionUndislike")
+                    )
+                    .then(0.0)
+                    .otherwise(1.0)
+                ).alias("dislike_target"),
+                # consumption_time target
+                pl.struct(["viewTimeSec", "durationSeconds"])
+                .map_batches(
+                    lambda s: pl.Series(
+                        self.consumption_time_batch(
+                            s.struct.field("viewTimeSec").to_list(),
+                            s.struct.field("durationSeconds").to_list(),
+                        )
                     ),
+                    return_dtype=pl.Float64,
                 )
-                .alias("processed")
-            ]
-        ).unnest("processed")
-
-        processed = processed.rename({"rid": "key"})
-        processed = processed.drop(
-            [
-                "features",
-                "like_target",
-                "dislike_target",
-                "consumption_time_target",
-                "label",
+                .alias("consumption_time_target"),
             ]
         )
 
-        processed = (
-            processed.with_columns(
+        features_data = filtered_df["features"].to_list()
+        features_dicts: list[dict[int, float]] = [
+            self.extract_features_dict(feature) for feature in features_data
+        ]
+
+        feature_strings = []
+        for feat_dict in features_dicts:
+            feat_strs = []
+            for fid in self.features:
+                val = feat_dict.get(fid, BIG_NEGATIVE_DEFAULT_VALUE)
+                feat_strs.append(f"{val:.8g}".rstrip("0").rstrip("."))
+            feature_strings.append(feat_strs)
+
+        filtered_df = filtered_df.with_columns(
+            [
+                (
+                    2.0
+                    * (
+                        2.0 * (2.0 * 0.0 + pl.col("like_target"))
+                        + pl.col("dislike_target")
+                    )
+                    + pl.col("consumption_time_target")
+                ).alias("label_value")
+            ]
+        )
+
+        value_strings = []
+        for i in range(len(filtered_df)):
+            label_str = f"{filtered_df['label_value'][i]:.8g}".rstrip("0").rstrip(".")
+            value_str = f"{label_str}\t1\t" + "\t".join(feature_strings[i])
+            value_strings.append(value_str)
+
+        filtered_df = filtered_df.with_columns([pl.Series("value", value_strings)])
+
+        filtered_df = filtered_df.with_columns(
+            [
+                pl.concat_list(
+                    [
+                        pl.struct(
+                            [
+                                pl.lit("like").alias("name"),
+                                pl.col("like_target").alias("target"),
+                                pl.lit(5.0).alias("weight"),
+                            ]
+                        ),
+                        pl.struct(
+                            [
+                                pl.lit("dislike").alias("name"),
+                                pl.col("dislike_target").alias("target"),
+                                pl.lit(14.0).alias("weight"),
+                            ]
+                        ),
+                        pl.struct(
+                            [
+                                pl.lit("consumption_time").alias("name"),
+                                pl.col("consumption_time_target").alias("target"),
+                                pl.lit(0.41).alias("weight"),
+                            ]
+                        ),
+                    ]
+                ).alias("targets")
+            ]
+        )
+
+        result_df = filtered_df.with_columns([pl.col("rid").alias("key")]).select(
+            ["key", "value", "targets"]
+        )
+
+        result_df = (
+            result_df.with_columns(
                 [
                     pl.col("targets")
                     .list.eval(pl.element().struct.field("target"))
@@ -263,23 +263,34 @@ class FeaturesPairsGenerator:
             .drop("uniqueTargetsCount")
         )
 
-        return processed.sort("key")
+        result_df = result_df.sort("key")
 
-    def generate_pairs(self, features_df: pl.DataFrame) -> pl.DataFrame:
+        print(f"Feature table: {len(result_df)} rows")
+        return result_df
+
+    @staticmethod
+    def generate_pairs_table(features_df: pl.DataFrame) -> pl.DataFrame:
+        print(f"Pair generating with {len(features_df)} rows of features ...")
+
+        if len(features_df) == 0:
+            return pl.DataFrame()
+
         features_df = features_df.with_columns(
             [pl.int_range(0, pl.len()).alias("rowIndex")]
         )
 
-        exploded = features_df.explode("targets").with_columns(
+        exploded_df = features_df.explode("targets").with_columns(
             [
-                pl.col("key").alias("groupId"),
                 pl.col("targets").struct.field("name").alias("targetName"),
                 pl.col("targets").struct.field("target").alias("target"),
                 pl.col("targets").struct.field("weight").alias("weight"),
+                pl.col("key").alias("groupId"),
             ]
         )
 
-        grouped = exploded.group_by(["groupId", "targetName"]).agg(
+        logger.info("Data grouping ...")
+
+        grouped = exploded_df.group_by(["groupId", "targetName"]).agg(
             [
                 pl.col("rowIndex").alias("row_indices"),
                 pl.col("target").alias("targets_list"),
@@ -288,7 +299,9 @@ class FeaturesPairsGenerator:
             ]
         )
 
-        pairs_list = []
+        logger.info("Pairs creating ...")
+        pairs_data = []
+
         for group in grouped.iter_rows(named=True):
             group_id = group["groupId"]
             target_name = group["targetName"]
@@ -299,7 +312,7 @@ class FeaturesPairsGenerator:
 
             for i in range(group_size):
                 for j in range(i + 1, group_size):
-                    pairs_list.append(
+                    pairs_data.append(
                         {
                             "idx1": row_indices[i],
                             "target1": targets[i],
@@ -312,10 +325,12 @@ class FeaturesPairsGenerator:
                         }
                     )
 
-        if not pairs_list:
+        if not pairs_data:
+            logger.warning("Has not pairs for generating ...")
             return pl.DataFrame()
 
-        pairs_df = pl.DataFrame(pairs_list)
+        pairs_df = pl.DataFrame(pairs_data)
+        logger.info(f" Unordered paris: {len(pairs_df)}")
 
         total_weights = pairs_df.group_by(["groupId", "targetName"]).agg(
             [
@@ -326,7 +341,7 @@ class FeaturesPairsGenerator:
             ]
         )
 
-        result = (
+        result_df = (
             pairs_df.join(total_weights, on=["groupId", "targetName"])
             .with_columns(
                 [
@@ -340,23 +355,24 @@ class FeaturesPairsGenerator:
                     .alias("looser"),
                     (
                         pl.col("weight") * (pl.col("target1") - pl.col("target2")).abs()
-                    ).alias("weight"),
+                    ).alias("pair_weight"),
                 ]
             )
-            .filter(pl.col("weight").abs() >= 1e-8)
-            .select(
-                [
-                    pl.col("winner").cast(pl.Utf8).alias("key"),
-                    pl.concat_str(
-                        [
-                            pl.col("looser").cast(pl.Utf8),
-                            pl.col("weight").cast(pl.Utf8),
-                        ],
-                        separator="\t",
-                    ).alias("value"),
-                    pl.col("targetName").alias("target"),
-                ]
-            )
+            .filter(pl.col("pair_weight").abs() >= 1e-8)
         )
 
-        return result
+        final_df = result_df.select(
+            [
+                pl.col("winner").cast(pl.Utf8).alias("key"),
+                pl.concat_str(
+                    [
+                        pl.col("looser").cast(pl.Utf8),
+                        pl.col("pair_weight").cast(pl.Utf8),
+                    ],
+                    separator="\t",
+                ).alias("value"),
+                pl.col("targetName").alias("target"),
+            ]
+        )
+
+        return final_df

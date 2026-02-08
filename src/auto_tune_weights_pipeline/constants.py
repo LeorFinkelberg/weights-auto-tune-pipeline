@@ -1,6 +1,7 @@
 from enum import StrEnum, auto
 
 
+BIG_NEGATIVE_DEFAULT_VALUE = -3.4e38
 DICTIONARY_HUB_URL = "https://dictionary-hub.kaizen.idzn.ru/fetch"
 DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS = (
     "recommender-ucp-video-and-clips"
