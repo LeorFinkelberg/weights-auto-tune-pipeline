@@ -26,6 +26,14 @@ setup_logging()
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default="./feature_names.txt",
 )
+@click.option("--iterations", type=click.INT, default=150)
+@click.option("--l2-leaf-reg", type=click.FLOAT, default=3.0)
+@click.option("--learning-rate", type=click.FLOAT, default=0.05)
+@click.option("--border-count", type=click.INT, default=32)
+@click.option("--subsample", type=click.FLOAT, default=0.7)
+@click.option(
+    "--loss-function", type=click.STRING, default=LossFunctions.PAIR_LOGIT_PAIRWISE
+)
 @click.option("--n-trials", type=click.INT, default=3)
 @click.option("--timeout", type=click.FLOAT, default=120)
 @click.option("--direction", type=click.STRING, default="maximize")
@@ -37,6 +45,12 @@ def main(
     path_to_pool_cache_train,
     path_to_pool_cache_val,
     path_to_feature_names,
+    iterations,
+    l2_leaf_reg,
+    learning_rate,
+    border_count,
+    subsample,
+    loss_function,
     n_trials,
     timeout,
     direction,
@@ -60,12 +74,12 @@ def main(
                 path_to_feature_names=path_to_feature_names,
             ),
             catboost_params={
-                "iterations": 150,
-                "l2_leaf_reg": 3,
-                "learning_rate": 0.05,
-                "border_count": 32,
-                "subsample": 0.7,
-                "loss_function": LossFunctions.PAIR_LOGIT_PAIRWISE,
+                "iterations": iterations,
+                "l2_leaf_reg": l2_leaf_reg,
+                "learning_rate": learning_rate,
+                "border_count": border_count,
+                "subsample": subsample,
+                "loss_function": loss_function,
             },
         ),
         n_trials=n_trials,
