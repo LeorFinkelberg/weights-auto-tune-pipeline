@@ -32,6 +32,9 @@ workspace.xml
 *.cbm
 catboost_info/
 
+# Optuna
+*.db
+
 .DS_Store
 data/
 logs/
