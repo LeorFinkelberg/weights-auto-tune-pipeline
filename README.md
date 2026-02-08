@@ -4,6 +4,16 @@ NB! Перед каждым коммитом запускается `pre-commit`
 ```bash
 $ git commit -v --no-verify
 ```
+
+### _Tune weights for target events_
+```bash
+$ uv run cli.py --help
+$ uv run cli.py \
+    --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl
+    --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl
+    --n-trials 10
+    --timeout 3600
+```
 ### _MARIMO / JupterHub etc._
 ```bash
 $ git clone <repo>
