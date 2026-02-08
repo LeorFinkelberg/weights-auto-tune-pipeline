@@ -4,7 +4,6 @@ import numpy as np
 import polars as pl
 import catboost as cb
 
-from pathlib import Path
 from loguru import logger
 
 from auto_tune_weights_pipeline.types_ import StrPath
@@ -32,14 +31,14 @@ def main():
 
     features_table_train = features_pairs_generator.generate_features_table(
         pool_cache_train
-    )  # .limit(50_000))
+    )
     pairs_table_train = features_pairs_generator.generate_pairs_table(
         features_table_train
     )
 
     features_table_val = features_pairs_generator.generate_features_table(
         pool_cache_val
-    )  # .limit(5_000))
+    )
     pairs_table_val = features_pairs_generator.generate_pairs_table(features_table_val)
 
     catboost_pool_processor = CatBoostPoolProcessor(
@@ -188,11 +187,7 @@ def _add_catboost_scores_to_pool_cache(
         )
 
     if output_path is None:
-        data_dir = Path.cwd().joinpath("data")
-        output_path = data_dir.joinpath(
-            path_to_pool_cache_val.replace(".jsonl", "_with_scores.jsonl")
-        )
-        logger.debug(output_path)
+        output_path = path_to_pool_cache_val.replace(".jsonl", "_with_scores.jsonl")
 
     logger.info(f"Saving to {output_path}")
     pool_cache_with_scores.write_ndjson(output_path)
