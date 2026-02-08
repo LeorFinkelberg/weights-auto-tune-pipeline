@@ -18,7 +18,7 @@ class Objective:
         self,
         path_to_pool_cache_train: StrPath,
         path_to_pool_cache_val: StrPath,
-        feature_pairs_generator: FeaturesPairsGenerator,
+        features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
         nav_screen: str = "video_for_you",
         platform: str = "vk_video_android",
@@ -26,7 +26,7 @@ class Objective:
     ) -> None:
         self.path_to_pool_cache_train = path_to_pool_cache_train
         self.path_to_pool_cache_val = path_to_pool_cache_val
-        self.feature_pairs_generator = feature_pairs_generator
+        self.features_pairs_generator = features_pairs_generator
         self.nav_screen = nav_screen
         self.platform = platform
         self.calculate_regular_auc = calculate_regular_auc
@@ -54,9 +54,9 @@ class Objective:
 
         features_table_val = self.features_pairs_generator.generate_features_table(
             pool_cache_val,
-            like_weight=self.like_weight,
-            dislike_weight=self.dislike_weight,
-            consumption_time_weight=self.consumption_time_weight,
+            like_weight=like_weight,
+            dislike_weight=dislike_weight,
+            consumption_time_weight=consumption_time_weight,
         )
         pairs_table_val = self.features_pairs_generator.generate_pairs_table(
             features_table_val
