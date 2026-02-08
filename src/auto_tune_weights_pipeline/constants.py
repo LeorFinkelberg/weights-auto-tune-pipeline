@@ -1,11 +1,20 @@
 from enum import StrEnum, auto
 
 
+RANDOM_SEED = 42424242
 BIG_NEGATIVE_DEFAULT_VALUE = -3.4e38
 DICTIONARY_HUB_URL = "https://dictionary-hub.kaizen.idzn.ru/fetch"
 DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS = (
     "recommender-ucp-video-and-clips"
 )
+
+
+class LossFunctions(StrEnum):
+    PAIR_LOGIT = "PairLogit"
+
+
+class CatboostTaskTypes(StrEnum):
+    CPU = "CPU"
 
 
 class YtProxyClusterNames(StrEnum):

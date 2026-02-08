@@ -374,5 +374,6 @@ class FeaturesPairsGenerator:
                 pl.col("targetName").alias("target"),
             ]
         )
+        logger.info(f"Generated {len(final_df)} pairs ...")
 
         return final_df
