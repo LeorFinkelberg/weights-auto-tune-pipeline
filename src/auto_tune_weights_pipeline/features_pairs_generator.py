@@ -127,7 +127,13 @@ class FeaturesPairsGenerator:
 
         return result
 
-    def generate_features_table(self, df: pl.DataFrame) -> pl.DataFrame:
+    def generate_features_table(
+        self,
+        df: pl.DataFrame,
+        like_weight: float = 5.0,
+        dislike_weight: float = 14.0,
+        consumption_time_weight: float = 0.41,
+    ) -> pl.DataFrame:
         logger.info(f"Feature table creating with {len(df)} rows ...")
 
         filtered_df = df.filter(
@@ -223,21 +229,21 @@ class FeaturesPairsGenerator:
                             [
                                 pl.lit("like").alias("name"),
                                 pl.col("like_target").alias("target"),
-                                pl.lit(5.0).alias("weight"),
+                                pl.lit(like_weight).alias("weight"),
                             ]
                         ),
                         pl.struct(
                             [
                                 pl.lit("dislike").alias("name"),
                                 pl.col("dislike_target").alias("target"),
-                                pl.lit(14.0).alias("weight"),
+                                pl.lit(dislike_weight).alias("weight"),
                             ]
                         ),
                         pl.struct(
                             [
                                 pl.lit("consumption_time").alias("name"),
                                 pl.col("consumption_time_target").alias("target"),
-                                pl.lit(0.41).alias("weight"),
+                                pl.lit(consumption_time_weight).alias("weight"),
                             ]
                         ),
                     ]
