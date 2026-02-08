@@ -3,6 +3,7 @@ import typing as t
 import polars as pl
 import catboost as cb
 
+from pathlib import Path
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.columns import Columns
@@ -16,8 +17,8 @@ from auto_tune_weights_pipeline.constants import SummaryLogFields
 class Objective:
     def __init__(
         self,
-        path_to_pool_cache_train: StrPath,
-        path_to_pool_cache_val: StrPath,
+        path_to_pool_cache_train: Path,
+        path_to_pool_cache_val: Path,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
         nav_screen: str = "video_for_you",
@@ -33,8 +34,8 @@ class Objective:
         self.catboost_params = catboost_params
 
     def __call__(self, trial) -> float:
-        pool_cache_train = pl.read_ndjson(self.path_to_pool_cache_train)
-        pool_cache_val = pl.read_ndjson(self.path_to_pool_cache_val)
+        pool_cache_train = pl.read_ndjson(str(self.path_to_pool_cache_train))
+        pool_cache_val = pl.read_ndjson(str(self.path_to_pool_cache_val))
 
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000)
         dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000)
@@ -72,7 +73,7 @@ class Objective:
         )
         pool_val: cb.Pool = catboost_pool_processor.create_pool()
 
-        trainer = CatboostTrainer(**self.catboost_params)
+        trainer = CatboostTrainer(self.catboost_params)
         trainer.train(pool_train)
 
         target_config: t.Final[dict] = {

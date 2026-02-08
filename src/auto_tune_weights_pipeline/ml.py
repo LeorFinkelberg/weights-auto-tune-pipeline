@@ -6,11 +6,6 @@ import catboost as cb
 
 from loguru import logger
 from pathlib import Path
-from auto_tune_weights_pipeline.constants import (
-    RANDOM_SEED,
-    LossFunctions,
-    CatboostTaskTypes,
-)
 from auto_tune_weights_pipeline.types_ import StrPath
 
 
@@ -117,13 +112,13 @@ class CatBoostPoolProcessor:
     @staticmethod
     def add_catboost_scores_to_pool_cache(
         ranker: cb.CatBoostRanker,
-        path_to_pool_cache_val: StrPath,
+        path_to_pool_cache_val: Path,
         pool_val: cb.Pool,
         features_val: pl.DataFrame,
         score_col_name: str = "catboost_score",
         output_path: t.Optional[StrPath] = None,
     ) -> StrPath:
-        pool_cache_val = pl.read_ndjson(path_to_pool_cache_val)
+        pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
         logger.debug(f"Pool cache columns: {pool_cache_val.columns}")
 
@@ -223,7 +218,13 @@ class CatBoostPoolProcessor:
             )
 
         if output_path is None:
-            output_path = path_to_pool_cache_val.replace(".jsonl", "_with_scores.jsonl")
+            _name = (
+                path_to_pool_cache_val.name.replace(path_to_pool_cache_val.suffix, "")
+                + "_with_scores"
+            )
+            output_path = path_to_pool_cache_val.parent.joinpath(_name).with_suffix(
+                ".jsonl"
+            )
 
         logger.info(f"Saving to {output_path}")
         pool_cache_with_scores.write_ndjson(output_path)
@@ -251,36 +252,16 @@ class CatBoostPoolProcessor:
 class CatboostTrainer:
     def __init__(
         self,
-        iterations: int = 300,
-        learning_rate: float = 0.05,
-        depth: int = 6,
-        loss_function: str = LossFunctions.PAIR_LOGIT_PAIRWISE,
-        verbose=100,
-        random_seed: int = RANDOM_SEED,
-        task_type: CatboostTaskTypes = CatboostTaskTypes.CPU,
+        params: dict,
         ranker_name: str = "catboost_ranker.cbm",
     ) -> None:
         self.ranker = None
-        self.iterations = iterations
-        self.learning_rate = learning_rate
-        self.depth = depth
-        self.loss_function = loss_function
-        self.verbose = verbose
-        self.random_seed = random_seed
-        self.task_type = task_type
+        self.params = params
         self.ranker_name = ranker_name
 
     def train(self, pool: cb.Pool) -> None:
         logger.info("Catboost training ...")
-        self.ranker = cb.CatBoostRanker(
-            iterations=self.iterations,
-            learning_rate=self.learning_rate,
-            depth=self.depth,
-            loss_function=self.loss_function,
-            verbose=self.verbose,
-            random_seed=self.random_seed,
-            task_type=self.task_type,
-        )
+        self.ranker = cb.CatBoostRanker(**self.params)
         self.ranker.fit(pool)
 
         logger.info("Ranker saving ...")
