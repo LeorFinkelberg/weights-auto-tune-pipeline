@@ -9,10 +9,9 @@ import yt.wrapper as yt
 from pathlib import Path
 from loguru import logger
 
-from enum import StrEnum
 from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.constants import YtProxyClusterNames
+from auto_tune_weights_pipeline.constants import YtProxyClusterNames, SummaryLogFields
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
 
 
@@ -71,25 +70,13 @@ class YtReader:
             token=self.token,
             config=self.config,
         )
-        """# logger.error(yt_client.exists(self.path_to_yt_table).is_ok()) if
-        not yt_client.exists(self.path_to_yt_table):
-
-        logger.error(f"Table {self.path_to_yt_table!r} was not found ...")
-        return
-        """
 
         yt_client.run_map(
             _filter_mapper,
             source_table=self.path_to_yt_table,
             destination_table=self.path_to_temp_yt_table,
             format=yt.JsonFormat(),
-            spec={
-                # "mapper": {
-                # "memory_limit": 4 * 1024 ** 3,
-                # "cpu": 4,
-                # },
-                "max_failed_job_count": 1
-            },
+            spec={"max_failed_job_count": 1},
         )
 
         table = yt_client.read_table(self.path_to_temp_yt_table)
@@ -102,7 +89,6 @@ class YtReader:
                 line: dict
                 for line in table:
                     logger.debug(line)
-                    # output.write(f"{json.dumps(line)}\n")
 
                 if _path_to_output.exists():
                     logger.success(
@@ -112,22 +98,6 @@ class YtReader:
             logger.warning(
                 f"File {str(_path_to_output)!r} already exists. The file was not downloaded ..."
             )
-
-
-class _SummaryLogFields(StrEnum):
-    GAUC_SIMPLE = "GAUCSimple"
-    GAUC_WEIGHTED = "GAUCWeighted"
-    N_GROUPS = "n_groups"
-    STD = "std"
-    MIN = "min"
-    MAX = "max"
-    MEDIAN = "median"
-    GROUP_DETAILS = "group_details"
-    GAUC_VALID = "GAUC_valid"
-
-    @classmethod
-    def get_values(cls) -> tuple[str, ...]:
-        return tuple(member.value for member in cls)
 
 
 class LogParser:
@@ -159,7 +129,7 @@ class LogParser:
         auc_logs_parsed: dict = self.convert_message_to_dict(auc_message)
         _logs = auc_logs_parsed[target_name]
 
-        if not summary_log_fild in _SummaryLogFields.get_values():
+        if not summary_log_fild in SummaryLogFields.get_values():
             raise ValueError(f"Error! Not found field: {summary_log_fild!r}")
 
         return _logs[summary_log_fild]

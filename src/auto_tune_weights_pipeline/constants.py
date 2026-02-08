@@ -18,6 +18,22 @@ class CatboostTaskTypes(StrEnum):
     CPU = "CPU"
 
 
+class SummaryLogFields(StrEnum):
+    GAUC_SIMPLE = "GAUCSimple"
+    GAUC_WEIGHTED = "GAUCWeighted"
+    N_GROUPS = "n_groups"
+    STD = "std"
+    MIN = "min"
+    MAX = "max"
+    MEDIAN = "median"
+    GROUP_DETAILS = "group_details"
+    GAUC_VALID = "GAUC_valid"
+
+    @classmethod
+    def get_values(cls) -> tuple[str, ...]:
+        return tuple(member.value for member in cls)
+
+
 class YtProxyClusterNames(StrEnum):
     """
     Pattern:
