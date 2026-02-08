@@ -27,7 +27,7 @@ class CatBoostPoolProcessor:
         sample = self.features_df["value"][0]
         n_features = len(sample.split("\t")) - 2
 
-        X: np.ndarray = self._extract_features(self.features_df["value"], n_features)
+        X: np.ndarray = self.extract_features(self.features_df["value"], n_features)
         logger.info(f"Feature matrix: {X.shape}")
 
         logger.info("Pairs extracting ...")
@@ -86,7 +86,7 @@ class CatBoostPoolProcessor:
         return pool
 
     @staticmethod
-    def _extract_features(value_series, n_features: int) -> np.ndarray:
+    def extract_features(value_series, n_features: int) -> np.ndarray:
         features_list = []
 
         for value in value_series:

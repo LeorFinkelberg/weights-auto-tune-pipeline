@@ -245,9 +245,12 @@ class FeaturesPairsGenerator:
             ]
         )
 
-        result_df = filtered_df.with_columns([pl.col("rid").alias("key")]).select(
-            ["key", "value", "targets"]
-        )
+        result_df = filtered_df.with_columns(
+            [
+                pl.col("rid").alias("key"),
+                pl.col("rid").alias("original_rid"),
+            ]
+        ).select(["key", "value", "targets", "original_rid"])
 
         result_df = (
             result_df.with_columns(
