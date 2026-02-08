@@ -56,7 +56,7 @@ def main(
         Objective(
             path_to_pool_cache_train=path_to_pool_cache_train,
             path_to_pool_cache_val=path_to_pool_cache_val,
-            feature_pairs_generator=FeaturesPairsGenerator(
+            features_pairs_generator=FeaturesPairsGenerator(
                 path_to_feature_names=path_to_feature_names,
             ),
             catboost_params={
