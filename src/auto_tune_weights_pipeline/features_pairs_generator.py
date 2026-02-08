@@ -268,12 +268,12 @@ class FeaturesPairsGenerator:
 
         result_df = result_df.sort("key")
 
-        print(f"Feature table: {len(result_df)} rows")
+        logger.info(f"Feature table: {len(result_df)} rows")
         return result_df
 
     @staticmethod
     def generate_pairs_table(features_df: pl.DataFrame) -> pl.DataFrame:
-        print(f"Pair generating with {len(features_df)} rows of features ...")
+        logger.info(f"Pair generating with {len(features_df)} rows of features ...")
 
         if len(features_df) == 0:
             return pl.DataFrame()
