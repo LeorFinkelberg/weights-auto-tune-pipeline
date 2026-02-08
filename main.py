@@ -90,7 +90,7 @@ def _add_catboost_scores_to_pool_cache(
     pool_val: cb.Pool,
     features_val: pl.DataFrame,
     score_col_name: str = "catboost_score",
-    output_path: t.Optional[str] = "pool_cache_with_scores_val.jsonl",
+    output_path: t.Optional[StrPath] = None,
 ) -> StrPath:
     pool_cache_val = pl.read_ndjson(path_to_pool_cache_val)
     logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
@@ -192,6 +192,7 @@ def _add_catboost_scores_to_pool_cache(
         output_path = data_dir.joinpath(
             path_to_pool_cache_val.replace(".jsonl", "_with_scores.jsonl")
         )
+        logger.debug(output_path)
 
     logger.info(f"Saving to {output_path}")
     pool_cache_with_scores.write_ndjson(output_path)
