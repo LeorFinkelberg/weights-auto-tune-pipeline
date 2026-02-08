@@ -28,6 +28,10 @@ env/
 *.iws
 workspace.xml
 
+# Catboost
+*.cbm
+catboost_info/
+
 .DS_Store
 data/
 logs/
