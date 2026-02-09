@@ -37,10 +37,10 @@ class Objective:
         pool_cache_train = pl.read_ndjson(str(self.path_to_pool_cache_train))
         pool_cache_val = pl.read_ndjson(str(self.path_to_pool_cache_val))
 
-        like_weight = trial.suggest_float("like_weight", 0.0, 1_000)
-        dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000)
+        like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
+        dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000.0)
         consumption_time_weight = trial.suggest_float(
-            "consumption_time_weight", 0.0, 10
+            "consumption_time_weight", 0.0, 10.0
         )
 
         features_table_train = self.features_pairs_generator.generate_features_table(
