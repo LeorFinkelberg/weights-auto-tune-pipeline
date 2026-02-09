@@ -17,13 +17,16 @@ $ uv run cli.py --help
 $ uv run cli.py \
     --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl
     --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl
+    --loss-function PairLogitPairwise \
     --n-trials 10
-    --timeout 3600
-
-#  2026-02-09 02:45:50.288 | INFO     | auto_tune_weights_pipeline.logging_config:setup_logging:19 - Logging configured successfully
-# [I 2026-02-09 02:45:50,524] Using an existing study with name 'tune_target_events_weights' instead of creating a new one.
-# 2026-02-09 02:45:50.763 | INFO     | auto_tune_weights_pipeline.features_pairs_generator:_map_feature_names_to_feature_ids:72 - Feature ids: 228,229,...
-# ...
+    --timeout 600
+# Or just use bash script
+$ chmod +x run_tune_pipeline.sh
+$ ./run_tune_pipeline.sh
+# Optuna dashboards
+$ optuna-dashboard sqlite:///tune_target_events_weights.db
+# Listening on http://127.0.0.1:8080/
+# Hit Ctrl-C to quit.
 ```
 ### _MARIMO / JupterHub etc._
 ```bash
