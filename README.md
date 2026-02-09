@@ -1,18 +1,29 @@
-## _Сценарии работы с библиотекой_
+## _Scenarios for working with the library_
 
-NB! Перед каждым коммитом запускается `pre-commit` с проверкой. Однако, если требуется зафиксировать изменения без `pre-commit`, то следует добавить флаг `--no-verify`
+NB! Before each commit, a `pre-commit` is run with verification. However, if you want to commit changes without `pre-commit`, then add the `--no-verify` flag.
 ```bash
 $ git commit -v --no-verify
 ```
 
 ### _Tune weights for target events_
 ```bash
+# Download pool_caches
+$ yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_train" \
+    --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_train..jsonl
+$ yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_val" \
+    --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_val..jsonl
+# Run tunner
 $ uv run cli.py --help
 $ uv run cli.py \
     --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl
     --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl
     --n-trials 10
     --timeout 3600
+
+#  2026-02-09 02:45:50.288 | INFO     | auto_tune_weights_pipeline.logging_config:setup_logging:19 - Logging configured successfully
+# [I 2026-02-09 02:45:50,524] Using an existing study with name 'tune_target_events_weights' instead of creating a new one.
+# 2026-02-09 02:45:50.763 | INFO     | auto_tune_weights_pipeline.features_pairs_generator:_map_feature_names_to_feature_ids:72 - Feature ids: 228,229,...
+# ...
 ```
 ### _MARIMO / JupterHub etc._
 ```bash
@@ -21,10 +32,11 @@ $ cd <repo>
 $ uv sync
 $ uv run marimo run
 ```
-#### _Расчет GAUC_
+#### _GAUC Compute_
 
 In `marimo` session ...
 ```python
+import typing as t
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.target_config import TargetConfig
@@ -51,7 +63,7 @@ summary = gauc_metric.get_summary(results)
 print(summary)
 ```
 
-#### _Обучение ML-модели_
+#### _ML-model training_
 
 ```python
 from sklearn.metrics import roc_auc_score
@@ -97,7 +109,7 @@ $ cd <repo>
 $ uv sync
 ```
 ### _Tests_
-Для запуска тестов выполнить
+Run test
 ```bash
 $ pytest
 $ pytest -vv -m auc  # only for AUC computing test
