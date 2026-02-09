@@ -23,6 +23,7 @@ FROM jupiter.`//home/.../vk_video/pool_caches/1d/2026-02-01`
 WHERE
   navScreen = "video_for_you"
   and platform in ("vk_video_android", "android")
+  and formulaPath == "fstorage:vk_video_266_1769078359_f"
   and typeId == 1776
   and userType == "vk"
   and recommenderId == 200

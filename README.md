@@ -24,7 +24,7 @@ $ uv run cli.py \
 $ chmod +x run_tune_pipeline.sh
 $ ./run_tune_pipeline.sh
 # Optuna dashboards
-$ optuna-dashboard sqlite:///tune_target_events_weights.db
+$ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 # Listening on http://127.0.0.1:8080/
 # Hit Ctrl-C to quit.
 ```
