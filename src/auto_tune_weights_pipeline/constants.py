@@ -9,6 +9,21 @@ DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS = (
 )
 
 
+class Platforms(StrEnum):
+    def _generate_next_value_(name, start, count, last_values) -> str:
+        return name.lower()
+
+    ANDROID = auto()
+    VK_VIDEO_ANDROID = auto()
+
+
+class NavScreens(StrEnum):
+    def _generate_next_value_(name, start, count, last_values) -> str:
+        return name.lower()
+
+    VIDEO_FOR_YOU = auto()
+
+
 class LossFunctions(StrEnum):
     PAIR_LOGIT = "PairLogit"
     PAIR_LOGIT_PAIRWISE = "PairLogitPairwise"

@@ -11,7 +11,7 @@ from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.events import Events
 from auto_tune_weights_pipeline.ml import CatboostTrainer, CatBoostPoolProcessor
 from auto_tune_weights_pipeline.target_config import TargetConfig
-from auto_tune_weights_pipeline.constants import SummaryLogFields
+from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms
 
 
 class Objective:
@@ -22,14 +22,14 @@ class Objective:
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
         nav_screen: str = "video_for_you",
-        platform: str = "vk_video_android",
+        platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
         calculate_regular_auc=True,
     ) -> None:
         self.path_to_pool_cache_train = path_to_pool_cache_train
         self.path_to_pool_cache_val = path_to_pool_cache_val
         self.features_pairs_generator = features_pairs_generator
         self.nav_screen = nav_screen
-        self.platform = platform
+        self.platforms = platforms
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
 
@@ -99,7 +99,7 @@ class Objective:
             target_configs=target_config,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen=self.nav_screen,
-            platform=self.platform,
+            platforms=self.platforms,
             calculate_regular_auc=self.calculate_regular_auc,
         )
 
