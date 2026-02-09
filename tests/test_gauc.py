@@ -46,7 +46,7 @@ class TestGaucCalculator:
             target_configs=target_config_watch_coverage_30s,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen="video_for_you",
-            platform="vk_video_android",
+            platforms=("vk_video_android",),
             calculate_regular_auc=True,
         )
 
@@ -104,7 +104,7 @@ class TestGaucCalculator:
             target_configs=target_config_watch_coverage_30s,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen="video_for_you",
-            platform="vk_video_android",
+            platforms=("vk_video_android",),
             calculate_regular_auc=True,
         )
 
@@ -154,7 +154,7 @@ class TestGaucCalculator:
             target_configs=target_config_watch_coverage_30s,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen="video_for_you",
-            platform="vk_video_android",
+            platforms=("vk_video_android",),
             calculate_regular_auc=True,
         )
 
@@ -204,7 +204,7 @@ class TestGaucCalculator:
             target_configs=target_config_watch_coverage_30s,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen="video_for_you",
-            platform="vk_video_android",
+            platforms=("vk_video_android",),
             calculate_regular_auc=True,
         )
 
@@ -262,7 +262,7 @@ class TestGaucCalculator:
             target_configs=target_config_watch_coverage_30s,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen="video_for_you",
-            platform="vk_video_android",
+            platforms=("vk_video_android",),
             calculate_regular_auc=True,
         )
 
