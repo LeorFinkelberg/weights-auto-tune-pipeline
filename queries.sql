@@ -22,7 +22,7 @@ SELECT
 FROM jupiter.`//home/.../vk_video/pool_caches/1d/2026-02-01`
 WHERE
   navScreen = "video_for_you"
-  and platform == "vk_video_android"
+  and platform in ("vk_video_android", "android")
   and typeId == 1776
   and userType == "vk"
   and recommenderId == 200
