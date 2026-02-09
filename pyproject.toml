@@ -14,6 +14,7 @@ dependencies = [
     "nox>=2025.11.12",
     "numpy>=2.4.2",
     "optuna>=4.7.0",
+    "optuna-dashboard>=0.20.0",
     "pandas>=3.0.0",
     "polars>=1.37.1",
     "pre-commit>=4.5.1",
