@@ -4,4 +4,5 @@ uv run cli.py \
     --loss-function PairLogitPairwise \
     --iterations 300 \
     --n-trials 3 \
-    --timeout 600
+    --timeout 600 \
+    --no-load-if-exists

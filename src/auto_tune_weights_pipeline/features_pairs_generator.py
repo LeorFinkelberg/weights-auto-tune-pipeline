@@ -62,9 +62,12 @@ class FeaturesPairsGenerator:
             for line in _features:
                 features.append(line.strip())
 
-        feature_ids: list[int] = [
-            feature_name_to_feature_id[feature_name] for feature_name in features
-        ]
+        feature_ids: list[int] = []
+        for feature_name in features:
+            try:
+                feature_ids.append(feature_name_to_feature_id[feature_name])
+            except KeyError:
+                continue
 
         _first_n_features = ",".join(str(id_) for id_ in feature_ids[:n])
         _last_n_features = ",".join(str(id_) for id_ in feature_ids[-n:])

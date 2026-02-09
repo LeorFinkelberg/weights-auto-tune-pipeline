@@ -9,7 +9,7 @@ from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 
 from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.constants import Platforms
+from auto_tune_weights_pipeline.constants import Platforms, NavScreens
 from auto_tune_weights_pipeline.metrics.base import Metric
 from auto_tune_weights_pipeline.target_config import (
     TargetConfig,
@@ -27,7 +27,7 @@ class GAUC(Metric):
         session_col_name: str = Columns.RID_COL_NAME,
         score_col_name: str = Columns.SCORE_COL_NAME,
         platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
-        nav_screen: str = "video_for_you",
+        nav_screen: str = NavScreens.VIDEO_FOR_YOU,
         formula_path: str = "fstorage:vk_video_266_1769078359_f",
         nav_screen_col_name: str = Columns.NAV_SCREEN_COL_NAME,
         platform_col_name: str = Columns.PLATFORM_COL_NAME,

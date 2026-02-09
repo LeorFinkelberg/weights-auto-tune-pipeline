@@ -4,7 +4,7 @@ import polars as pl
 import catboost as cb
 
 from pathlib import Path
-from loguru import logger
+from optuna.trial._trial import Trial
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.columns import Columns
@@ -12,7 +12,7 @@ from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.events import Events
 from auto_tune_weights_pipeline.ml import CatboostTrainer, CatBoostPoolProcessor
 from auto_tune_weights_pipeline.target_config import TargetConfig
-from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms
+from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, NavScreens
 
 
 class Objective:
@@ -22,7 +22,7 @@ class Objective:
         path_to_pool_cache_val: Path,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
-        nav_screen: str = "video_for_you",
+        nav_screen: str = NavScreens.VIDEO_FOR_YOU,
         platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
         calculate_regular_auc=True,
     ) -> None:
@@ -34,7 +34,7 @@ class Objective:
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
 
-    def __call__(self, trial) -> float:
+    def __call__(self, trial: Trial) -> float:
         pool_cache_train = pl.read_ndjson(str(self.path_to_pool_cache_train))
         pool_cache_val = pl.read_ndjson(str(self.path_to_pool_cache_val))
 
@@ -108,5 +108,4 @@ class Objective:
         metric = summary["target_details"]["watch_coverage_30s"][
             SummaryLogFields.GAUC_WEIGHTED
         ]
-        logger.debug(f"GAUC: {metric:.5g}")
         return metric

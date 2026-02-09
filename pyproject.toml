@@ -50,6 +50,7 @@ filterwarnings = [
 ]
 markers = [
     "auc: marks AUC-tests (deselect with '-m \"not auc\"')",
+    "obj: marks objective tests (deselect with '-m \"not obj\"')",
 ]
 
 [tool.coverage.run]
