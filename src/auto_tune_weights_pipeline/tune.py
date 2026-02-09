@@ -4,6 +4,7 @@ import polars as pl
 import catboost as cb
 
 from pathlib import Path
+from loguru import logger
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.columns import Columns
@@ -40,7 +41,7 @@ class Objective:
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
         dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000.0)
         consumption_time_weight = trial.suggest_float(
-            "consumption_time_weight", 0.0, 10.0
+            "consumption_time_weight", 0.0, 100.0
         )
 
         features_table_train = self.features_pairs_generator.generate_features_table(
@@ -104,6 +105,8 @@ class Objective:
         )
 
         summary = GAUC.get_summary(results)
-        return summary["target_details"]["watch_coverage_30s"][
+        metric = summary["target_details"]["watch_coverage_30s"][
             SummaryLogFields.GAUC_WEIGHTED
         ]
+        logger.debug(f"GAUC: {metric:.5g}")
+        return metric

@@ -38,9 +38,9 @@ setup_logging()
 @click.option("--timeout", type=click.FLOAT, default=120)
 @click.option("--direction", type=click.STRING, default="maximize")
 @click.option("--study-name", type=click.STRING, default="tune_target_events_weights")
-@click.option("--load-if-exists", type=click.BOOL, default=True)
-@click.option("--gc-after-trial", type=click.BOOL, default=True)
-@click.option("--show-progress-bar", type=click.BOOL, default=True)
+@click.option("--load-if-exists/--no-load-if-exists", default=True)
+@click.option("--gc-after-trial/--no-gc-after-trial", default=True)
+@click.option("--show-progress-bar/--no-show-progress-bar", default=True)
 def main(
     path_to_pool_cache_train,
     path_to_pool_cache_val,
