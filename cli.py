@@ -27,6 +27,7 @@ setup_logging()
     default="./feature_names.txt",
 )
 @click.option("--iterations", type=click.INT, default=150)
+@click.option("--depth", type=click.INT, default=6)
 @click.option("--l2-leaf-reg", type=click.FLOAT, default=3.0)
 @click.option("--learning-rate", type=click.FLOAT, default=0.05)
 @click.option("--border-count", type=click.INT, default=32)
@@ -46,6 +47,7 @@ def main(
     path_to_pool_cache_val,
     path_to_feature_names,
     iterations,
+    depth,
     l2_leaf_reg,
     learning_rate,
     border_count,
@@ -75,6 +77,7 @@ def main(
             ),
             catboost_params={
                 "iterations": iterations,
+                "depth": depth,
                 "l2_leaf_reg": l2_leaf_reg,
                 "learning_rate": learning_rate,
                 "border_count": border_count,
