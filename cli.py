@@ -30,7 +30,6 @@ setup_logging()
 @click.option("--depth", type=click.INT, default=6)
 @click.option("--l2-leaf-reg", type=click.FLOAT, default=3.0)
 @click.option("--learning-rate", type=click.FLOAT, default=0.05)
-@click.option("--border-count", type=click.INT, default=32)
 @click.option("--subsample", type=click.FLOAT, default=0.7)
 @click.option(
     "--loss-function", type=click.STRING, default=LossFunctions.PAIR_LOGIT_PAIRWISE
@@ -50,7 +49,6 @@ def main(
     depth,
     l2_leaf_reg,
     learning_rate,
-    border_count,
     subsample,
     loss_function,
     n_trials,
@@ -80,7 +78,6 @@ def main(
                 "depth": depth,
                 "l2_leaf_reg": l2_leaf_reg,
                 "learning_rate": learning_rate,
-                "border_count": border_count,
                 "subsample": subsample,
                 "loss_function": loss_function,
             },

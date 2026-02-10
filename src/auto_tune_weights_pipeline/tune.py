@@ -103,9 +103,8 @@ class Objective:
             platforms=self.platforms,
             calculate_regular_auc=self.calculate_regular_auc,
         )
-
         summary = GAUC.get_summary(results)
-        metric = summary["target_details"]["watch_coverage_30s"][
+
+        return summary["target_details"]["watch_coverage_30s"][
             SummaryLogFields.GAUC_WEIGHTED
         ]
-        return metric
