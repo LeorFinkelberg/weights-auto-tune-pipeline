@@ -116,4 +116,5 @@ Run test
 ```bash
 $ uv run pytest
 $ uv run pytest -vv -m auc  # only for AUC computing test
+$ uv run pytest -vv -m obj  # only for objective
 ```
