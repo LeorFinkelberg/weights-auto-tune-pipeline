@@ -76,7 +76,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
 from auto_tune_weights_pipeline.events import Events
-from auto_tune_weights_pipeline.maxtrix_builder import AutoMatrixBuilder
+from auto_tune_weights_pipeline.matrix_builder import AutoMatrixBuilder
 
 X_train, y_train, X_test, y_test = AutoMatrixBuilder.train_test_split(
     path_to_pool_cache_train="./data/pool_cache_with_features_2026_02_01_train.jsonl",
