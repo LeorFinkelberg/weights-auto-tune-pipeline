@@ -8,9 +8,9 @@ $ git commit -v --no-verify
 ### _Tune weights for target events_
 ```bash
 # Download pool_caches
-$ yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_train" \
+$ uv run yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_train" \
     --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_train.jsonl
-$ yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_val" \
+$ uv run yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_val" \
     --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_val.jsonl
 # Run tunner
 $ uv run cli.py --help
