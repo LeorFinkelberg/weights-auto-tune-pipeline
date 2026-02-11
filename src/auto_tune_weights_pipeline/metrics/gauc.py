@@ -361,8 +361,8 @@ class GAUC(Metric):
 
         logger.info(f"GAUC results for {target_name}:")
         logger.info(f"Groups with AUC: {result['n_groups']}")
-        logger.info(f"GAUC (weighted): {result['GAUCWeighted']:.4f}")
-        logger.info(f"GAUC (simple): {result['GAUCSimple']:.4f}")
+        logger.info(f"GAUC (weighted): {result['GAUCWeighted']:.7f}")
+        logger.info(f"GAUC (simple): {result['GAUCSimple']:.7f}")
         logger.info(f"Std AUC: {result['std']:.4f}")
         logger.info(f"Min AUC: {result['min']:.4f}")
         logger.info(f"Max AUC: {result['max']:.4f}")
@@ -456,9 +456,9 @@ class GAUC(Metric):
         logger.info(f"Total targets: {summary['total_targets']}")
         logger.info(f"Targets with valid AUC: {summary['targets_with_valid_auc']}")
         logger.info(f"Targets with valid GAUC: {summary['targets_with_valid_gauc']}")
-        logger.info(f"Average AUC: {summary['average_auc']:.4f}")
-        logger.info(f"Average GAUC (weighted): {summary['average_gauc_weighted']:.4f}")
-        logger.info(f"Average GAUC (simple): {summary['average_gauc_simple']:.4f}")
+        logger.info(f"Average AUC: {summary['average_auc']:.7f}")
+        logger.info(f"Average GAUC (weighted): {summary['average_gauc_weighted']:.7f}")
+        logger.info(f"Average GAUC (simple): {summary['average_gauc_simple']:.7f}")
         logger.info("=" * 50)
 
         return summary
