@@ -117,6 +117,7 @@ class CatBoostPoolProcessor:
         features_val: pl.DataFrame,
         score_col_name: str = "catboost_score",
         output_path: t.Optional[StrPath] = None,
+        noise_coeff: float = 0.1,
     ) -> StrPath:
         pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
@@ -160,10 +161,11 @@ class CatBoostPoolProcessor:
             )
             raise ValueError("No rid column found in pool_cache_val")
 
+        noise = np.random.normal(size=predictions.size)
         scores_df = pl.DataFrame(
             {
                 rid_column_in_pool_cache: features_val[rid_column_in_features],
-                score_col_name: predictions,
+                score_col_name: predictions + noise_coeff * noise,
             }
         )
 
