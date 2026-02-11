@@ -114,6 +114,6 @@ $ uv sync
 ### _Tests_
 Run test
 ```bash
-$ pytest
-$ pytest -vv -m auc  # only for AUC computing test
+$ uv run pytest
+$ uv run pytest -vv -m auc  # only for AUC computing test
 ```
