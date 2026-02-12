@@ -133,9 +133,9 @@ class FeaturesPairsGenerator:
     def generate_features_table(
         self,
         df: pl.DataFrame,
-        like_weight: float = 5.0,
-        dislike_weight: float = 14.0,
-        consumption_time_weight: float = 0.41,
+        like_weight: float,
+        dislike_weight: float,
+        consumption_time_weight: float,
     ) -> pl.DataFrame:
         logger.info(f"Feature table creating with {len(df)} rows ...")
 
