@@ -64,15 +64,13 @@ class Objective:
             features_table_val
         )
 
-        catboost_pool_processor = CatBoostPoolProcessor(
+        pool_train: cb.Pool = CatBoostPoolProcessor(
             features_table_train, pairs_table_train
-        )
-        pool_train: cb.Pool = catboost_pool_processor.create_pool()
+        ).create_pool()
 
-        catboost_pool_processor = CatBoostPoolProcessor(
+        pool_val: cb.Pool = CatBoostPoolProcessor(
             features_table_val, pairs_table_val
-        )
-        pool_val: cb.Pool = catboost_pool_processor.create_pool()
+        ).create_pool()
 
         trainer = CatboostTrainer(self.catboost_params)
         trainer.train(pool_train)
