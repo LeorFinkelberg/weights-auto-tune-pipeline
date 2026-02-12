@@ -111,22 +111,24 @@ class CatBoostPoolProcessor:
 
     @staticmethod
     def add_catboost_scores_to_pool_cache(
-        ranker: cb.CatBoostRanker,
+        # ranker: cb.CatBoostRanker,
+        model: "CatboostTrainer",
         path_to_pool_cache_val: Path,
         pool_val: cb.Pool,
         features_val: pl.DataFrame,
         score_col_name: str = "catboost_score",
         output_path: t.Optional[StrPath] = None,
-        noise_coeff: float = 0.1,
+        noise_coeff: float = 2,
     ) -> StrPath:
         pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
         logger.debug(f"Pool cache columns: {pool_cache_val.columns}")
 
         logger.info("Getting predictions from ranker ...")
-        predictions: np.ndarray[float] = ranker.predict(pool_val)
+        predictions: np.ndarray[float] = model.get_predict(pool_val)
         logger.debug(f"Predictions shape: {predictions.shape}")
         logger.debug(f"Features_val columns: {features_val.columns}")
+        logger.debug(f"Features_val row counts: {len(features_val)}")
 
         rid_column_in_features = None
         possible_rid_columns = ["original_rid", "rid", "session_id", "groupId"]
@@ -161,42 +163,22 @@ class CatBoostPoolProcessor:
             )
             raise ValueError("No rid column found in pool_cache_val")
 
-        noise = np.random.normal(size=predictions.size)
-        scores_df = pl.DataFrame(
+        pred_df = pl.DataFrame(
             {
-                rid_column_in_pool_cache: features_val[rid_column_in_features],
-                score_col_name: predictions + noise_coeff * noise,
+                "rid": features_val["original_rid"],
+                score_col_name: predictions
+                + noise_coeff * np.random.normal(size=predictions.size),
             }
         )
 
-        logger.info(f"Scores DataFrame: {len(scores_df)} rows")
-        logger.info(
-            f"Unique {rid_column_in_pool_cache} in scores: {scores_df[rid_column_in_pool_cache].n_unique()}"
+        avg_scores = pred_df.group_by("rid").agg(
+            pl.col(score_col_name).mean().alias(score_col_name)
         )
-        logger.info(
-            f"Sample rids from scores_df: {scores_df[rid_column_in_pool_cache].head(5).to_list()}"
-        )
-
-        scores_unique = scores_df[rid_column_in_pool_cache].n_unique()
-        if scores_unique != len(scores_df):
-            logger.warning(
-                f"Duplicate keys in scores_df: {scores_unique} unique out of {len(scores_df)}"
-            )
-            duplicate_counts = (
-                scores_df.group_by(rid_column_in_pool_cache)
-                .agg(pl.len().alias("count"))
-                .filter(pl.col("count") > 1)
-            )
-            if duplicate_counts.height > 0:
-                logger.debug(f"Duplicate rids: {duplicate_counts.head(3)}")
-
-            scores_df = scores_df.unique(subset=[rid_column_in_pool_cache], keep="last")
-            logger.info(f"After deduplication: {len(scores_df)} rows")
-
-        logger.info(f"Joining using key column: {rid_column_in_pool_cache}")
 
         pool_cache_with_scores = pool_cache_val.join(
-            scores_df, on=rid_column_in_pool_cache, how="left"
+            avg_scores,
+            on="rid",
+            how="left",
         )
 
         null_count = pool_cache_with_scores[score_col_name].null_count()
@@ -209,44 +191,15 @@ class CatBoostPoolProcessor:
             f"Success rate: {(total_rows - null_count) / total_rows * 100:.1f}%"
         )
 
-        if 0 < null_count < 10:
-            missing = (
-                pool_cache_with_scores.filter(pl.col(score_col_name).is_null())
-                .select([rid_column_in_pool_cache])
-                .head(5)
-            )
-            logger.debug(
-                f"Sample rids without scores: {missing[rid_column_in_pool_cache].to_list()}"
-            )
-
         if output_path is None:
             _name = (
                 path_to_pool_cache_val.name.replace(path_to_pool_cache_val.suffix, "")
                 + "_with_scores"
             )
-            output_path = path_to_pool_cache_val.parent.joinpath(_name).with_suffix(
-                ".jsonl"
-            )
+            output_path = (path_to_pool_cache_val.parent / _name).with_suffix(".jsonl")
 
         logger.info(f"Saving to {output_path}")
         pool_cache_with_scores.write_ndjson(output_path)
-
-        loaded_check = pl.read_ndjson(output_path)
-        logger.info(f"Saved file check: {len(loaded_check)} rows")
-
-        if score_col_name in loaded_check.columns:
-            loaded_null_count = loaded_check[score_col_name].null_count()
-            logger.warning(f"Null scores in saved file: {loaded_null_count}")
-
-            if loaded_null_count < total_rows:
-                valid_scores = loaded_check[score_col_name].drop_nulls()
-                logger.info(
-                    f"Score stats - min: {valid_scores.min():.4f}, "
-                    f"max: {valid_scores.max():.4f}, "
-                    f"mean: {valid_scores.mean():.4f}"
-                )
-        else:
-            logger.error(f"Score column {score_col_name} not found in saved file!")
 
         return output_path
 
@@ -274,12 +227,7 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def predict(self, pool: cb.Pool):
-        predicts = self._softmax(self.ranker.predict(pool))
-        logger.debug(predicts.size)
-        logger.debug(predicts.min())
-        logger.debug(predicts.mean())
-        logger.debug(predicts.max())
+    def get_predict(self, pool: cb.Pool):
         return self._softmax(self.ranker.predict(pool))
 
     @staticmethod

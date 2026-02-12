@@ -85,7 +85,7 @@ class Objective:
 
         path_to_pool_cache_with_catboost_scores: StrPath = (
             CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
-                ranker=trainer.ranker,
+                model=trainer,
                 path_to_pool_cache_val=self.path_to_pool_cache_val,
                 pool_val=pool_val,
                 features_val=features_table_val,

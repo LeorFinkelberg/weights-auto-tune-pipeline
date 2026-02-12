@@ -298,8 +298,7 @@ class GAUC(Metric):
                 n_pos = np.sum(y_true_sorted)
                 n_neg = len(y_true_sorted) - n_pos
 
-                pos_ranks = np.where(y_true_sorted == 1)[0] + 1
-                auc = (np.sum(pos_ranks) - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg)
+                auc = roc_auc_score(y_true, y_score)
 
                 all_auc_values.append(auc)
                 all_group_sizes.append(len(group_data))
