@@ -36,7 +36,6 @@ class Objective:
 
     def __call__(self, trial: Trial) -> float:
         pool_cache_train = pl.read_ndjson(str(self.path_to_pool_cache_train))
-        pool_cache_val = pl.read_ndjson(str(self.path_to_pool_cache_val))
 
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
         dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000.0)
@@ -54,22 +53,8 @@ class Objective:
             features_table_train
         )
 
-        features_table_val = self.features_pairs_generator.generate_features_table(
-            pool_cache_val,
-            like_weight=like_weight,
-            dislike_weight=dislike_weight,
-            consumption_time_weight=consumption_time_weight,
-        )
-        pairs_table_val = self.features_pairs_generator.generate_pairs_table(
-            features_table_val
-        )
-
         pool_train: cb.Pool = CatBoostPoolProcessor(
             features_table_train, pairs_table_train
-        ).create_pool()
-
-        pool_val: cb.Pool = CatBoostPoolProcessor(
-            features_table_val, pairs_table_val
         ).create_pool()
 
         trainer = CatboostTrainer(self.catboost_params)
@@ -87,8 +72,7 @@ class Objective:
             CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
                 trainer=trainer,
                 path_to_pool_cache_val=self.path_to_pool_cache_val,
-                pool_val=pool_val,
-                features_val=features_table_val,
+                features_pairs_generator=self.features_pairs_generator,
                 score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
             )
         )

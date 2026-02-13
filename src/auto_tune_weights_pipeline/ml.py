@@ -6,7 +6,11 @@ import catboost as cb
 
 from loguru import logger
 from pathlib import Path
+
+from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.constants import BIG_NEGATIVE_DEFAULT_VALUE
 from auto_tune_weights_pipeline.types_ import StrPath
+from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 
 
 class CatBoostPoolProcessor:
@@ -113,80 +117,38 @@ class CatBoostPoolProcessor:
     def add_catboost_scores_to_pool_cache(
         trainer: "CatboostTrainer",
         path_to_pool_cache_val: Path,
-        pool_val: cb.Pool,
-        features_val: pl.DataFrame,
-        score_col_name: str = "catboost_score",
+        features_pairs_generator: FeaturesPairsGenerator,
+        score_col_name: str = Columns.CATBOOST_SCORE_COL_NAME,
         output_path: t.Optional[StrPath] = None,
     ) -> StrPath:
         pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
-        logger.debug(f"Pool cache columns: {pool_cache_val.columns}")
 
-        logger.info("Getting predictions from ranker ...")
-        predictions: np.ndarray = trainer.get_safe_predictions(pool_val)
-        logger.debug(f"Predictions shape: {predictions.shape}")
-        logger.debug(f"Features_val columns: {features_val.columns}")
-        logger.debug(f"Features_val row counts: {len(features_val)}")
+        raw_features_list = pool_cache_val[Columns.FEATURES_COL_NAME].to_list()
+        logger.info(f"Extracted {len(raw_features_list)} raw feature records")
 
-        rid_column_in_features = None
-        possible_rid_columns = ["original_rid", "rid", "session_id", "groupId"]
+        features_dicts = [
+            features_pairs_generator.extract_features_dict(feat)
+            for feat in raw_features_list
+        ]
+        logger.info(f"Converted to {len(features_dicts)} feature dicts")
 
-        for col in possible_rid_columns:
-            if col in features_val.columns:
-                rid_column_in_features = col
-                logger.info(
-                    f"Found rid column in features_val: {rid_column_in_features}"
-                )
-                break
+        feature_order = features_pairs_generator.features
+        X_list = []
+        for feat_dict in features_dicts:
+            row = [
+                feat_dict.get(fid, BIG_NEGATIVE_DEFAULT_VALUE) for fid in feature_order
+            ]
+            X_list.append(row)
 
-        if rid_column_in_features is None:
-            logger.error(
-                f"No rid column found in features_val. Available columns: {features_val.columns}"
-            )
-            logger.info(f"First row of features_val: {features_val.row(0)}")
-            raise ValueError("No rid column found in features_val")
+        X = np.array(X_list, dtype=np.float32)
+        logger.info(f"Feature matrix shape: {X.shape}")
 
-        rid_column_in_pool_cache = None
-        for col in possible_rid_columns:
-            if col in pool_cache_val.columns:
-                rid_column_in_pool_cache = col
-                logger.info(
-                    f"Found rid column in pool_cache_val: {rid_column_in_pool_cache}"
-                )
-                break
+        predictions = trainer.get_predict(X)
+        logger.info(f"Got predictions: {len(predictions)}")
 
-        if rid_column_in_pool_cache is None:
-            logger.error(
-                f"No rid column found in pool_cache_val. Available columns: {pool_cache_val.columns}"
-            )
-            raise ValueError("No rid column found in pool_cache_val")
-
-        pred_df = pl.DataFrame(
-            {
-                "rid": features_val["original_rid"],
-                "pos_in_group": features_val["pos_in_group"],
-                score_col_name: predictions,
-            }
-        )
-
-        pool_cache_with_pos = pool_cache_val.with_columns(
-            pl.int_range(0, pl.len()).over("rid").alias("pos_in_group")
-        )
-
-        pool_cache_with_scores = pool_cache_with_pos.join(
-            pred_df,
-            on=["rid", "pos_in_group"],
-            how="left",
-        )
-
-        null_count = pool_cache_with_scores[score_col_name].null_count()
-        total_rows = len(pool_cache_with_scores)
-
-        logger.info(
-            f"Result: {total_rows - null_count} rows with scores, {null_count} rows without"
-        )
-        logger.info(
-            f"Success rate: {(total_rows - null_count) / total_rows * 100:.1f}%"
+        pool_cache_with_scores = pool_cache_val.with_columns(
+            pl.Series(score_col_name, predictions)
         )
 
         if output_path is None:
@@ -225,10 +187,20 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def get_safe_predictions(
-        self, pool: cb.Pool, noise_coeff: float = 1.0
-    ) -> np.ndarray:
-        predictions = self.ranker.predict(pool)
-        return np.nan_to_num(predictions, nan=0.0) + noise_coeff * np.random.normal(
-            size=predictions.shape
+    def get_predict(self, X: np.ndarray, noise: float = 0.05) -> np.ndarray:
+        if self.ranker is None:
+            raise ValueError("Model not trained yet!")
+
+        predictions = self.ranker.predict(X)
+        predictions = np.nan_to_num(
+            predictions + noise * np.random.normal(size=predictions.size),
+            nan=BIG_NEGATIVE_DEFAULT_VALUE,
         )
+
+        logger.debug(
+            f"Raw predictions - min: {predictions.min():.4f}, "
+            f"max: {predictions.max():.4f}, "
+            f"std: {predictions.std():.4f}"
+        )
+
+        return predictions
