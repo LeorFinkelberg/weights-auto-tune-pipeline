@@ -6,8 +6,7 @@ from pathlib import Path
 from auto_tune_weights_pipeline.tune import Objective
 from auto_tune_weights_pipeline.logging_config import setup_logging
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
-from auto_tune_weights_pipeline.constants import LossFunctions
-
+from auto_tune_weights_pipeline.constants import LossFunctions, Platforms
 
 setup_logging()
 
@@ -73,6 +72,7 @@ def main(
             features_pairs_generator=FeaturesPairsGenerator(
                 path_to_feature_names=path_to_feature_names,
             ),
+            platforms=(Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
             catboost_params={
                 "iterations": iterations,
                 "depth": depth,
