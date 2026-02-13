@@ -289,8 +289,8 @@ class GAUC(Metric):
                     pl.col(session_col_name) == session_id
                 )
 
-                y_true = group_data[label_col_name].to_numpy()
-                y_score = group_data[score_col_name].to_numpy()
+                y_true = np.nan_to_num(group_data[label_col_name].to_numpy(), nan=0.0)
+                y_score = np.nan_to_num(group_data[score_col_name].to_numpy(), nan=0.0)
 
                 order = np.argsort(y_score)
                 y_true_sorted = y_true[order]

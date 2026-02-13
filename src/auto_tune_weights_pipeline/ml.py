@@ -225,6 +225,10 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def get_safe_predictions(self, pool: cb.Pool) -> np.ndarray:
+    def get_safe_predictions(
+        self, pool: cb.Pool, noise_coeff: float = 1.0
+    ) -> np.ndarray:
         predictions = self.ranker.predict(pool)
-        return np.nan_to_num(predictions, nan=0.0)
+        return np.nan_to_num(predictions, nan=0.0) + noise_coeff * np.random.normal(
+            size=predictions.shape
+        )
