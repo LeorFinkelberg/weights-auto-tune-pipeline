@@ -85,17 +85,18 @@ class Objective:
 
         path_to_pool_cache_with_catboost_scores: StrPath = (
             CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
-                model=trainer,
+                trainer=trainer,
                 path_to_pool_cache_val=self.path_to_pool_cache_val,
                 pool_val=pool_val,
                 features_val=features_table_val,
-                score_col_name="catboost_score",
+                score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
             )
         )
 
         metric = GAUC(path_to_pool_cache=path_to_pool_cache_with_catboost_scores)
         results = metric.calculate_metric(
             target_configs=target_config,
+            score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
             session_col_name=Columns.RID_COL_NAME,
             nav_screen=self.nav_screen,
             platforms=self.platforms,

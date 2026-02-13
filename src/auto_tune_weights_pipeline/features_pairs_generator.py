@@ -258,8 +258,10 @@ class FeaturesPairsGenerator:
             [
                 pl.col("rid").alias("key"),
                 pl.col("rid").alias("original_rid"),
+                pl.int_range(0, pl.len()).alias("row_id"),
+                pl.int_range(0, pl.len()).over("rid").alias("pos_in_group"),
             ]
-        ).select(["key", "value", "targets", "original_rid"])
+        ).select(["key", "value", "targets", "original_rid", "row_id", "pos_in_group"])
 
         result_df = (
             result_df.with_columns(

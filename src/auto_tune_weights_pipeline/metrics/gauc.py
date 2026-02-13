@@ -211,8 +211,8 @@ class GAUC(Metric):
             }
 
         try:
-            y_true = pool_cache[label_col_name].to_numpy()
-            y_score = pool_cache[score_col_name].to_numpy()
+            y_true = np.nan_to_num(pool_cache[label_col_name].to_numpy(), nan=0.0)
+            y_score = np.nan_to_num(pool_cache[score_col_name].to_numpy(), nan=0.0)
 
             auc = roc_auc_score(y_true, y_score)
 

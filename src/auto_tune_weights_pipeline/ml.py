@@ -111,21 +111,19 @@ class CatBoostPoolProcessor:
 
     @staticmethod
     def add_catboost_scores_to_pool_cache(
-        # ranker: cb.CatBoostRanker,
-        model: "CatboostTrainer",
+        trainer: "CatboostTrainer",
         path_to_pool_cache_val: Path,
         pool_val: cb.Pool,
         features_val: pl.DataFrame,
         score_col_name: str = "catboost_score",
         output_path: t.Optional[StrPath] = None,
-        noise_coeff: float = 2,
     ) -> StrPath:
         pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
         logger.debug(f"Pool cache columns: {pool_cache_val.columns}")
 
         logger.info("Getting predictions from ranker ...")
-        predictions: np.ndarray[float] = model.get_predict(pool_val)
+        predictions: np.ndarray = trainer.get_safe_predictions(pool_val)
         logger.debug(f"Predictions shape: {predictions.shape}")
         logger.debug(f"Features_val columns: {features_val.columns}")
         logger.debug(f"Features_val row counts: {len(features_val)}")
@@ -166,18 +164,18 @@ class CatBoostPoolProcessor:
         pred_df = pl.DataFrame(
             {
                 "rid": features_val["original_rid"],
-                score_col_name: predictions
-                + noise_coeff * np.random.normal(size=predictions.size),
+                "pos_in_group": features_val["pos_in_group"],
+                score_col_name: predictions,
             }
         )
 
-        avg_scores = pred_df.group_by("rid").agg(
-            pl.col(score_col_name).mean().alias(score_col_name)
+        pool_cache_with_pos = pool_cache_val.with_columns(
+            pl.int_range(0, pl.len()).over("rid").alias("pos_in_group")
         )
 
-        pool_cache_with_scores = pool_cache_val.join(
-            avg_scores,
-            on="rid",
+        pool_cache_with_scores = pool_cache_with_pos.join(
+            pred_df,
+            on=["rid", "pos_in_group"],
             how="left",
         )
 
@@ -227,10 +225,6 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def get_predict(self, pool: cb.Pool):
-        return self._softmax(self.ranker.predict(pool))
-
-    @staticmethod
-    def _softmax(values) -> np.ndarray[float]:
-        exp_ = np.exp(values - np.max(values))
-        return exp_ / exp_.sum()
+    def get_safe_predictions(self, pool: cb.Pool) -> np.ndarray:
+        predictions = self.ranker.predict(pool)
+        return np.nan_to_num(predictions, nan=0.0)
