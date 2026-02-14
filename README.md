@@ -35,6 +35,9 @@ $ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 $ uv run cli.py \
     --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
     --path-to-pretrained-model ./data/model.cb
+# Or just use bash script
+chmod +x get_gauc_for_pretrained_model.sh
+./get_gauc_for_pretrained_model.sh
 ```
 
 #### _In marimo session_
