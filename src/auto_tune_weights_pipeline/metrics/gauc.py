@@ -198,7 +198,8 @@ class GAUC(Metric):
 
         label_col_name = f"label_{target_name}"
 
-        unique_labels = pool_cache[label_col_name].unique().to_list()
+        # unique_labels = pool_cache[label_col_name].unique().to_list()
+        unique_labels = pool_cache[label_col_name].unique()
         if len(unique_labels) < 2:
             logger.warning(
                 f"Cannot calculate AUC for target {target_name}: "

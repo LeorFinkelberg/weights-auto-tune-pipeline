@@ -1,10 +1,10 @@
 import warnings
-
 import requests
 import polars as pl
 import numpy as np
 import urllib3
 
+from typing import Dict, List
 from loguru import logger
 from pathlib import Path
 from auto_tune_weights_pipeline.types_ import StrPath
@@ -38,22 +38,25 @@ class FeaturesPairsGenerator:
         self.recommender_id = recommender_id
         self.dictionary_hub_url = dictionary_hub_url
         self.dictionary_hub_project = dictionary_hub_project
-        self.features: list[int] = self._map_feature_names_to_feature_ids(
+        self.features: List[int] = self._map_feature_names_to_feature_ids(
             path_to_feature_names
         )
+        self.feature_to_idx: Dict[int, int] = {
+            fid: i for i, fid in enumerate(self.features)
+        }
 
     def _map_feature_names_to_feature_ids(
         self,
         path_to_feature_names: StrPath,
         n: int = 30,
-    ) -> list[int]:
-        feature_name_to_feature_id: dict[str, int] = requests.post(
+    ) -> List[int]:
+        feature_name_to_feature_id: Dict[str, int] = requests.post(
             url=self.dictionary_hub_url,
             json=[self.dictionary_hub_project],
             verify=False,
         ).json()["name2idMap"][self.dictionary_hub_project]["features"]
 
-        features: list[str] = []
+        features: List[str] = []
         with (
             Path.cwd()
             .joinpath(path_to_feature_names)
@@ -62,7 +65,7 @@ class FeaturesPairsGenerator:
             for line in _features:
                 features.append(line.strip())
 
-        feature_ids: list[int] = []
+        feature_ids: List[int] = []
         for feature_name in features:
             try:
                 feature_ids.append(feature_name_to_feature_id[feature_name])
@@ -80,31 +83,39 @@ class FeaturesPairsGenerator:
         return feature_ids
 
     @staticmethod
-    def consumption_time_batch(view_times, durations):
-        view_times_np = np.array(view_times, dtype=np.float64)
-        durations_np = np.array(durations, dtype=np.float64)
+    def _consumption_time_batch_impl(
+        view_times: pl.Series, durations: pl.Series
+    ) -> pl.Series:
+        v = view_times.to_numpy().astype(np.float64)
+        d = durations.to_numpy().astype(np.float64)
 
-        result = np.zeros_like(view_times_np)
-        mask = view_times_np > 0.0
+        result = np.zeros_like(v)
+        mask = v > 0.0
 
         if not np.any(mask):
-            return result.tolist()
+            return pl.Series(result)
 
-        v = view_times_np[mask]
-        d = durations_np[mask]
+        v_masked = v[mask]
+        d_masked = d[mask]
 
-        magic_duration = 1.27494682e-05 * d * d + 2.29489044e-02 * d + 3.18074092e01
-        nwt = np.where(d > 7200.0, 850.0, np.minimum(magic_duration, d / 2.0))
+        magic_duration = (
+            1.27494682e-05 * d_masked * d_masked
+            + 2.29489044e-02 * d_masked
+            + 3.18074092e01
+        )
+        nwt = np.where(
+            d_masked > 7200.0, 850.0, np.minimum(magic_duration, d_masked / 2.0)
+        )
 
         click_weight = 0.01 * nwt
-        regain_coeff = d / (d - nwt + click_weight)
-        nw_time = regain_coeff * np.maximum(v - nwt, click_weight)
+        regain_coeff = d_masked / (d_masked - nwt + click_weight)
+        nw_time = regain_coeff * np.maximum(v_masked - nwt, click_weight)
 
         smooth = 0.25
         U = 7200.0
         C = 600.0
         this_clamp = np.minimum(nw_time, U)
-        max_clamp = np.minimum(d, U)
+        max_clamp = np.minimum(d_masked, U)
         target_regain = np.power(U, 1.0 - smooth)
         max_target = U / C
 
@@ -114,21 +125,60 @@ class FeaturesPairsGenerator:
             / ((np.power(max_clamp, smooth) + 1e-7) * target_regain)
         )
 
-        return result.tolist()
+        return pl.Series(result)
+
+    def consumption_time_batch(
+        self, view_times: pl.Expr, durations: pl.Expr
+    ) -> pl.Expr:
+        return pl.struct(
+            [view_times.alias("viewTimeSec"), durations.alias("durationSeconds")]
+        ).map_batches(
+            lambda s: self._consumption_time_batch_impl(
+                s.struct.field("viewTimeSec"), s.struct.field("durationSeconds")
+            ),
+            return_dtype=pl.Float64,
+        )
 
     def extract_features_dict(self, features_list: list) -> dict[int, float]:
-        result = {fid: -3.4e38 for fid in self.features}
+        result = {fid: BIG_NEGATIVE_DEFAULT_VALUE for fid in self.features}
 
         if not features_list:
             return result
 
         for item in features_list:
-            fid = int(item[0])
-            value = item[1]
-            if fid in self.features and value is not None:
-                result[fid] = round(float(value), 8)
+            try:
+                fid = int(item[0])
+                value = item[1]
+                if fid in self.feature_to_idx and value is not None:
+                    result[fid] = round(float(value), 8)
+            except (ValueError, TypeError, IndexError):
+                continue
 
         return result
+
+    def _extract_features_batch(self, features_series: pl.Series) -> np.ndarray:
+        features_list = features_series.to_list()
+        n_rows = len(features_list)
+        n_features = len(self.features)
+
+        result_matrix = np.full(
+            (n_rows, n_features), BIG_NEGATIVE_DEFAULT_VALUE, dtype=np.float32
+        )
+
+        for i, features in enumerate(features_list):
+            if features:
+                for feat in features:
+                    try:
+                        fid = int(feat[0])
+                        if fid in self.feature_to_idx:
+                            idx = self.feature_to_idx[fid]
+                            value = float(feat[1])
+                            if not np.isnan(value):
+                                result_matrix[i, idx] = round(value, 8)
+                    except (ValueError, TypeError, IndexError):
+                        continue
+
+        return result_matrix
 
     def generate_features_table(
         self,
@@ -176,102 +226,86 @@ class FeaturesPairsGenerator:
                     .otherwise(1.0)
                 ).alias("dislike_target"),
                 # consumption_time target
-                pl.struct(["viewTimeSec", "durationSeconds"])
-                .map_batches(
-                    lambda s: pl.Series(
-                        self.consumption_time_batch(
-                            s.struct.field("viewTimeSec").to_list(),
-                            s.struct.field("durationSeconds").to_list(),
-                        )
-                    ),
-                    return_dtype=pl.Float64,
-                )
-                .alias("consumption_time_target"),
+                self.consumption_time_batch(
+                    pl.col("viewTimeSec"), pl.col("durationSeconds")
+                ).alias("consumption_time_target"),
             ]
         )
 
-        features_data = filtered_df["features"].to_list()
-        features_dicts: list[dict[int, float]] = [
-            self.extract_features_dict(feature) for feature in features_data
+        feature_matrix = self._extract_features_batch(filtered_df["features"])
+
+        n_features = len(self.features)
+        feature_cols = [
+            pl.Series(
+                name=f"f_{i}",
+                values=[
+                    f"{val:.8g}".rstrip("0").rstrip(".") for val in feature_matrix[:, i]
+                ],
+            )
+            for i in range(n_features)
         ]
 
-        feature_strings = []
-        for feat_dict in features_dicts:
-            feat_strs = []
-            for fid in self.features:
-                val = feat_dict.get(fid, BIG_NEGATIVE_DEFAULT_VALUE)
-                feat_strs.append(f"{val:.8g}".rstrip("0").rstrip("."))
-            feature_strings.append(feat_strs)
-
+        filtered_df = filtered_df.with_columns(feature_cols)
         filtered_df = filtered_df.with_columns(
-            [
-                (
-                    2.0
-                    * (
-                        2.0 * (2.0 * 0.0 + pl.col("like_target"))
-                        + pl.col("dislike_target")
-                    )
-                    + pl.col("consumption_time_target")
-                ).alias("label_value")
-            ]
+            (
+                2.0
+                * (2.0 * (2.0 * 0.0 + pl.col("like_target")) + pl.col("dislike_target"))
+                + pl.col("consumption_time_target")
+            ).alias("label_value")
         )
 
-        value_strings = []
-        for i in range(len(filtered_df)):
-            label_str = f"{filtered_df['label_value'][i]:.8g}".rstrip("0").rstrip(".")
-            value_str = f"{label_str}\t1\t" + "\t".join(feature_strings[i])
-            value_strings.append(value_str)
+        n_features = len(self.features)
+        value_expr = pl.format(
+            "{}\t1\t{}",
+            pl.col("label_value")
+            .cast(pl.String)
+            .str.replace(pl.lit(r"[.]?0+$"), pl.lit("")),
+            pl.concat_list([pl.col(f"f_{i}") for i in range(n_features)]).list.join(
+                pl.lit("\t")
+            ),
+        )
 
-        filtered_df = filtered_df.with_columns([pl.Series("value", value_strings)])
+        filtered_df = filtered_df.with_columns(value_expr.alias("value"))
 
-        filtered_df = filtered_df.with_columns(
+        targets_expr = pl.concat_list(
             [
-                pl.concat_list(
+                pl.struct(
                     [
-                        pl.struct(
-                            [
-                                pl.lit("like").alias("name"),
-                                pl.col("like_target").alias("target"),
-                                pl.lit(like_weight).alias("weight"),
-                            ]
-                        ),
-                        pl.struct(
-                            [
-                                pl.lit("dislike").alias("name"),
-                                pl.col("dislike_target").alias("target"),
-                                pl.lit(dislike_weight).alias("weight"),
-                            ]
-                        ),
-                        pl.struct(
-                            [
-                                pl.lit("consumption_time").alias("name"),
-                                pl.col("consumption_time_target").alias("target"),
-                                pl.lit(consumption_time_weight).alias("weight"),
-                            ]
-                        ),
+                        pl.lit("like").alias("name"),
+                        pl.col("like_target").alias("target"),
+                        pl.lit(like_weight).alias("weight"),
                     ]
-                ).alias("targets")
+                ),
+                pl.struct(
+                    [
+                        pl.lit("dislike").alias("name"),
+                        pl.col("dislike_target").alias("target"),
+                        pl.lit(dislike_weight).alias("weight"),
+                    ]
+                ),
+                pl.struct(
+                    [
+                        pl.lit("consumption_time").alias("name"),
+                        pl.col("consumption_time_target").alias("target"),
+                        pl.lit(consumption_time_weight).alias("weight"),
+                    ]
+                ),
             ]
-        )
+        ).alias("targets")
 
-        result_df = filtered_df.with_columns(
-            [
-                pl.col("rid").alias("key"),
-                pl.col("rid").alias("original_rid"),
-                pl.int_range(0, pl.len()).alias("row_id"),
-                pl.int_range(0, pl.len()).over("rid").alias("pos_in_group"),
-            ]
-        ).select(["key", "value", "targets", "original_rid", "row_id", "pos_in_group"])
+        filtered_df = filtered_df.with_columns(targets_expr)
+
+        result_df = filtered_df.with_columns([pl.col("rid").alias("key")]).select(
+            ["key", "value", "targets"]
+        )
 
         result_df = (
             result_df.with_columns(
-                [
-                    pl.col("targets")
-                    .list.eval(pl.element().struct.field("target"))
-                    .list.unique()
-                    .list.len()
-                    .alias("uniqueTargetsCount")
-                ]
+                pl.col("targets")
+                .list.eval(pl.element().struct.field("target"))
+                .list.unique()
+                .list.len()
+                .alias("uniqueTargetsCount")
             )
             .filter(pl.col("uniqueTargetsCount") > 1)
             .drop("uniqueTargetsCount")
@@ -280,6 +314,9 @@ class FeaturesPairsGenerator:
         result_df = result_df.sort("key")
 
         logger.info(f"Feature table: {len(result_df)} rows")
+
+        result_df = result_df.select(["key", "value", "targets"])
+
         return result_df
 
     @staticmethod
@@ -290,7 +327,7 @@ class FeaturesPairsGenerator:
             return pl.DataFrame()
 
         features_df = features_df.with_columns(
-            [pl.int_range(0, pl.len()).alias("rowIndex")]
+            pl.int_range(0, pl.len()).alias("rowIndex")
         )
 
         exploded_df = features_df.explode("targets").with_columns(
@@ -314,8 +351,8 @@ class FeaturesPairsGenerator:
         )
 
         logger.info("Pairs creating ...")
-        pairs_data = []
 
+        expanded = []
         for group in grouped.iter_rows(named=True):
             group_id = group["groupId"]
             target_name = group["targetName"]
@@ -324,35 +361,46 @@ class FeaturesPairsGenerator:
             targets = group["targets_list"]
             group_size = group["groupSize"]
 
-            for i in range(group_size):
-                for j in range(i + 1, group_size):
-                    pairs_data.append(
-                        {
-                            "idx1": row_indices[i],
-                            "target1": targets[i],
-                            "idx2": row_indices[j],
-                            "target2": targets[j],
-                            "targetName": target_name,
-                            "weight": weight,
-                            "groupId": group_id,
-                            "groupSize": group_size,
-                        }
-                    )
+            group_df = pl.DataFrame(
+                {
+                    "idx": row_indices,
+                    "target": targets,
+                    "groupId": [group_id] * group_size,
+                    "targetName": [target_name] * group_size,
+                    "weight": [weight] * group_size,
+                }
+            )
+            expanded.append(group_df)
 
-        if not pairs_data:
+        if not expanded:
             logger.warning("Has not pairs for generating ...")
             return pl.DataFrame()
 
-        pairs_df = pl.DataFrame(pairs_data)
-        logger.info(f" Unordered paris: {len(pairs_df)}")
+        all_groups_df = pl.concat(expanded)
 
+        pairs_df = (
+            all_groups_df.join(
+                all_groups_df.select(["idx", "target", "groupId", "targetName"]),
+                on=["groupId", "targetName"],
+                suffix="_2",
+            )
+            .filter(pl.col("idx") < pl.col("idx_2"))
+            .select(
+                [
+                    pl.col("idx").alias("idx1"),
+                    pl.col("target").alias("target1"),
+                    pl.col("idx_2").alias("idx2"),
+                    pl.col("target_2").alias("target2"),
+                    "targetName",
+                    "weight",
+                    "groupId",
+                ]
+            )
+        )
+
+        logger.info(f"Unordered pairs: {len(pairs_df)}")
         total_weights = pairs_df.group_by(["groupId", "targetName"]).agg(
-            [
-                (pl.col("target1") - pl.col("target2"))
-                .abs()
-                .sum()
-                .alias("totalRawWeight")
-            ]
+            (pl.col("target1") - pl.col("target2")).abs().sum().alias("totalRawWeight")
         )
 
         result_df = (
@@ -388,6 +436,6 @@ class FeaturesPairsGenerator:
                 pl.col("targetName").alias("target"),
             ]
         )
-        logger.info(f"Generated {len(final_df)} pairs ...")
 
+        logger.info(f"Generated {len(final_df)} pairs ...")
         return final_df

@@ -130,7 +130,6 @@ class CatBoostPoolProcessor:
         score_col_name: str = Columns.CATBOOST_SCORE_COL_NAME,
         output_path: t.Optional[StrPath] = None,
     ) -> StrPath:
-        # pool_cache_val = pl.read_ndjson(str(pool_cache_val))
         pool_cache_val = pool_cache_info_val.data
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
 
