@@ -40,20 +40,22 @@ class CatBoostPoolProcessor:
 
         logger.info("Pairs extracting ...")
         pairs = []
+        pairs_weight = []
 
         for row in self.pairs_df.iter_rows(named=True):
             try:
                 winner_idx = int(row["key"])
-
                 value = row["value"]
                 parts = value.split("\t")
-                if len(parts) < 1:
+                if len(parts) < 2:
                     continue
 
                 looser_idx = int(parts[0])
+                weight = float(parts[1])
+
                 if 0 <= winner_idx < len(X) and 0 <= looser_idx < len(X):
                     pairs.append((winner_idx, looser_idx))
-
+                    pairs_weight.append(weight)
             except (ValueError, TypeError):
                 continue
 
@@ -83,6 +85,7 @@ class CatBoostPoolProcessor:
             label=y,
             group_id=group_ids,
             pairs=pairs,
+            pairs_weight=pairs_weight,
             feature_names=[f"f{i}" for i in range(X.shape[1])],
         )
         logger.info(
@@ -195,7 +198,7 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def get_predict(self, X: np.ndarray, noise: float = 0.05) -> np.ndarray:
+    def get_predict(self, X: np.ndarray, noise: float = 0.0) -> np.ndarray:
         if self.ranker is None:
             raise ValueError("Model not trained yet!")
 
