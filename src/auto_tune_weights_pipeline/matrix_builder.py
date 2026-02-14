@@ -6,7 +6,7 @@ from typing_extensions import override
 from pathlib import Path
 from tqdm import tqdm
 from loguru import logger
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.event_names import EventNames
 from auto_tune_weights_pipeline.types_ import StrPath
 
 
@@ -30,7 +30,7 @@ class MatrixBuilder:
 
     def get_Xy_matrix(
         self,
-        target_label: str = Events.ACTION_PLAY,
+        target_label: str = EventNames.ACTION_PLAY,
         view_time_threshold: t.Optional[int] = None,
         num_features: int = 256,
     ) -> t.Tuple[pl.DataFrame, pl.Series]:
@@ -204,7 +204,7 @@ class AutoMatrixBuilder(MatrixBuilder):
     @override
     def get_Xy_matrix(
         self,
-        target_label: str = Events.ACTION_PLAY,
+        target_label: str = EventNames.ACTION_PLAY,
         view_time_threshold: t.Optional[int] = None,
         max_features: int = 500,
         min_frequency: int = 10,
