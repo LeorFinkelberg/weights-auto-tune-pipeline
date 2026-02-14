@@ -129,7 +129,7 @@ class CatBoostPoolProcessor:
         features_pairs_generator: FeaturesPairsGenerator,
         score_col_name: str = Columns.CATBOOST_SCORE_COL_NAME,
         output_path: t.Optional[StrPath] = None,
-    ) -> StrPath:
+    ) -> Path:
         pool_cache_val = pool_cache_info_val.data
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
 
@@ -153,7 +153,7 @@ class CatBoostPoolProcessor:
         X = np.array(X_list, dtype=np.float32)
         logger.info(f"Feature matrix shape: {X.shape}")
 
-        predictions = trainer.get_predict(X)
+        predictions = trainer.predict(X)
         logger.info(f"Got predictions: {len(predictions)}")
 
         pool_cache_with_scores = pool_cache_val.with_columns(
@@ -177,9 +177,10 @@ class CatBoostPoolProcessor:
 class CatboostTrainer:
     def __init__(
         self,
-        params: dict,
+        params: t.Optional[dict] = None,
         ranker_name: str = "catboost_ranker.cbm",
     ) -> None:
+        self.params = params or {}
         self.ranker = None
         self.params = params
         self.ranker_name = ranker_name
@@ -197,7 +198,7 @@ class CatboostTrainer:
         else:
             logger.warning("Model could not be saved ...")
 
-    def get_predict(self, X: np.ndarray, noise: float = 0.0) -> np.ndarray:
+    def predict(self, X: np.ndarray, noise: float = 0.0) -> np.ndarray:
         if self.ranker is None:
             raise ValueError("Model not trained yet!")
 
@@ -214,3 +215,6 @@ class CatboostTrainer:
         )
 
         return predictions
+
+    def load(self, path_to_model: StrPath) -> None:
+        self.ranker = cb.CatBoostRanker().load_model(str(path_to_model))

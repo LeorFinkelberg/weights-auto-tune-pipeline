@@ -4,35 +4,41 @@ import catboost as cb
 from optuna.trial._trial import Trial
 
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
-from auto_tune_weights_pipeline.types_ import StrPath
-from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.metrics.gauc import GAUC
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.types_ import TupleStrOrPlatforms
 from auto_tune_weights_pipeline.ml import (
     CatboostTrainer,
     CatBoostPoolProcessor,
     PoolCacheInfo,
 )
-from auto_tune_weights_pipeline.target_config import TargetConfig
+from auto_tune_weights_pipeline.target_config import TargetNames
 from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, NavScreens
+from auto_tune_weights_pipeline.metrics.utils import get_metric
 
 
 class Objective:
     def __init__(
         self,
+        target_config: dict,
         pool_cache_info_train: PoolCacheInfo,
         pool_cache_info_val: PoolCacheInfo,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
-        nav_screen: str = NavScreens.VIDEO_FOR_YOU,
-        platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
+        nav_screen: t.Union[str, NavScreens] = NavScreens.VIDEO_FOR_YOU,
+        platforms: TupleStrOrPlatforms = (Platforms.VK_VIDEO_ANDROID,),
+        target_details=SummaryLogFields.TARGET_DETAILS,
+        target_name=TargetNames.WATCH_COVERAGE_30S,
+        metric_name=SummaryLogFields.GAUC_WEIGHTED,
         calculate_regular_auc=True,
     ) -> None:
+        self.target_config = target_config
         self.pool_cache_info_train = pool_cache_info_train
         self.pool_cache_info_val = pool_cache_info_val
         self.features_pairs_generator = features_pairs_generator
         self.nav_screen = nav_screen
         self.platforms = platforms
+        self.target_details = target_details
+        self.target_name = target_name
+        self.metric_name = metric_name
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
 
@@ -60,34 +66,15 @@ class Objective:
         trainer = CatboostTrainer(self.catboost_params)
         trainer.train(pool_train)
 
-        target_config: t.Final[dict] = {
-            "watch_coverage_30s": TargetConfig(
-                name="watch_coverage_30s",
-                event_name=Events.WATCH_COVERAGE_RECORD,
-                view_threshold_sec=30.0,
-            )
-        }
-
-        path_to_pool_cache_with_catboost_scores: StrPath = (
-            CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
-                trainer=trainer,
-                pool_cache_info_val=self.pool_cache_info_val,
-                features_pairs_generator=self.features_pairs_generator,
-                score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
-            )
-        )
-
-        metric = GAUC(path_to_pool_cache=path_to_pool_cache_with_catboost_scores)
-        results = metric.calculate_metric(
-            target_configs=target_config,
-            score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
-            session_col_name=Columns.RID_COL_NAME,
+        return get_metric(
+            trainer=trainer,
+            target_config=self.target_config,
+            pool_cache_info_val=self.pool_cache_info_val,
+            features_pairs_generator=self.features_pairs_generator,
             nav_screen=self.nav_screen,
             platforms=self.platforms,
+            target_details=self.target_details,
+            target_name=self.target_name,
+            metric_name=self.metric_name,
             calculate_regular_auc=self.calculate_regular_auc,
         )
-        summary = GAUC.get_summary(results)
-
-        return summary["target_details"]["watch_coverage_30s"][
-            SummaryLogFields.GAUC_WEIGHTED
-        ]

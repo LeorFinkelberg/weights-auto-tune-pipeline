@@ -1,7 +1,7 @@
 import pytest
 
 from pathlib import Path
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.event_names import EventNames
 from auto_tune_weights_pipeline.target_config import TargetConfig
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.columns import Columns
@@ -19,8 +19,8 @@ class TestGaucCalculator:
     def target_config_watch_coverage_30s(self):
         return {
             "watch_coverage_30s": TargetConfig(
-                name="watch_coverage_30s",
-                event_name=Events.WATCH_COVERAGE_RECORD,
+                target_name="watch_coverage_30s",
+                event_name=EventNames.WATCH_COVERAGE_RECORD,
                 view_threshold_sec=30.0,
             )
         }
