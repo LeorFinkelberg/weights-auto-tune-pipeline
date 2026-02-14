@@ -1,14 +1,26 @@
 import typing as t
 import polars as pl
 
+from enum import StrEnum, auto
 from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.event_names import EventNames
+
+
+class TargetNames(StrEnum):
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values) -> str:
+        return name.lower()
+
+    ACTION_PLAY = auto()
+    WATCH_COVERAGE_30S = auto()
+    WATCH_COVERAGE_60S = auto()
+    FIRST_FRAME = auto()
 
 
 @dataclass(frozen=True)
 class TargetConfig:
-    name: str
+    target_name: str
     event_name: str
     view_threshold_sec: t.Optional[float] = None
     condition: t.Optional[t.Callable[[pl.DataFrame], pl.Expr]] = None
@@ -28,22 +40,22 @@ class TargetConfig:
 
 
 DEFAULT_TARGETS_CONFIG: t.Final[dict] = {
-    "action_play": TargetConfig(
-        name="action_play",
-        event_name=Events.ACTION_PLAY,
+    TargetNames.ACTION_PLAY: TargetConfig(
+        target_name=TargetNames.ACTION_PLAY,
+        event_name=EventNames.ACTION_PLAY,
     ),
-    "watch_coverage_30s": TargetConfig(
-        name="watch_coverage_30s",
-        event_name=Events.WATCH_COVERAGE_RECORD,
+    TargetNames.WATCH_COVERAGE_30S: TargetConfig(
+        target_name=TargetNames.WATCH_COVERAGE_30S,
+        event_name=EventNames.WATCH_COVERAGE_RECORD,
         view_threshold_sec=30.0,
     ),
-    "watch_coverage_60s": TargetConfig(
-        name="watch_coverage_60s",
-        event_name=Events.WATCH_COVERAGE_RECORD,
+    TargetNames.WATCH_COVERAGE_60S: TargetConfig(
+        target_name=TargetNames.WATCH_COVERAGE_60S,
+        event_name=EventNames.WATCH_COVERAGE_RECORD,
         view_threshold_sec=60.0,
     ),
-    "first_frame": TargetConfig(
-        name="first_frame",
-        event_name=Events.FIRST_FRAME,
+    TargetNames.FIRST_FRAME: TargetConfig(
+        target_name=TargetNames.FIRST_FRAME,
+        event_name=EventNames.FIRST_FRAME,
     ),
 }
