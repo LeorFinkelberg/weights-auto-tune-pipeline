@@ -1,12 +1,15 @@
 import click
+import polars as pl
 import optuna
-from loguru import logger
 
+from loguru import logger
 from pathlib import Path
+
 from auto_tune_weights_pipeline.tune import Objective
 from auto_tune_weights_pipeline.logging_config import setup_logging
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.constants import LossFunctions, Platforms
+from auto_tune_weights_pipeline.ml import PoolCacheInfo
 
 setup_logging()
 
@@ -65,10 +68,19 @@ def main(
         load_if_exists=load_if_exists,
     )
 
+    pool_cache_info_train = PoolCacheInfo(
+        data=pl.read_ndjson(path_to_pool_cache_train),
+        path_to_data=path_to_pool_cache_train,
+    )
+    pool_cache_info_val = PoolCacheInfo(
+        data=pl.read_ndjson(path_to_pool_cache_val),
+        path_to_data=path_to_pool_cache_val,
+    )
+
     study.optimize(
         Objective(
-            path_to_pool_cache_train=path_to_pool_cache_train,
-            path_to_pool_cache_val=path_to_pool_cache_val,
+            pool_cache_info_train=pool_cache_info_train,
+            pool_cache_info_val=pool_cache_info_val,
             features_pairs_generator=FeaturesPairsGenerator(
                 path_to_feature_names=path_to_feature_names,
             ),

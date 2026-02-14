@@ -1,16 +1,18 @@
 import typing as t
-
-import polars as pl
 import catboost as cb
 
-from pathlib import Path
 from optuna.trial._trial import Trial
+
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
 from auto_tune_weights_pipeline.events import Events
-from auto_tune_weights_pipeline.ml import CatboostTrainer, CatBoostPoolProcessor
+from auto_tune_weights_pipeline.ml import (
+    CatboostTrainer,
+    CatBoostPoolProcessor,
+    PoolCacheInfo,
+)
 from auto_tune_weights_pipeline.target_config import TargetConfig
 from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, NavScreens
 
@@ -18,16 +20,16 @@ from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, Na
 class Objective:
     def __init__(
         self,
-        path_to_pool_cache_train: Path,
-        path_to_pool_cache_val: Path,
+        pool_cache_info_train: PoolCacheInfo,
+        pool_cache_info_val: PoolCacheInfo,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
         nav_screen: str = NavScreens.VIDEO_FOR_YOU,
         platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
         calculate_regular_auc=True,
     ) -> None:
-        self.path_to_pool_cache_train = path_to_pool_cache_train
-        self.path_to_pool_cache_val = path_to_pool_cache_val
+        self.pool_cache_info_train = pool_cache_info_train
+        self.pool_cache_info_val = pool_cache_info_val
         self.features_pairs_generator = features_pairs_generator
         self.nav_screen = nav_screen
         self.platforms = platforms
@@ -35,8 +37,6 @@ class Objective:
         self.catboost_params = catboost_params
 
     def __call__(self, trial: Trial) -> float:
-        pool_cache_train = pl.read_ndjson(str(self.path_to_pool_cache_train))
-
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
         dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000.0)
         consumption_time_weight = trial.suggest_float(
@@ -44,7 +44,7 @@ class Objective:
         )
 
         features_table_train = self.features_pairs_generator.generate_features_table(
-            pool_cache_train,
+            self.pool_cache_info_train.data,
             like_weight=like_weight,
             dislike_weight=dislike_weight,
             consumption_time_weight=consumption_time_weight,
@@ -71,7 +71,7 @@ class Objective:
         path_to_pool_cache_with_catboost_scores: StrPath = (
             CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
                 trainer=trainer,
-                path_to_pool_cache_val=self.path_to_pool_cache_val,
+                pool_cache_info_val=self.pool_cache_info_val,
                 features_pairs_generator=self.features_pairs_generator,
                 score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
             )

@@ -1,13 +1,15 @@
 import pytest
+import polars as pl
 import numpy as np
+import catboost as cb
+
 from unittest.mock import patch, Mock, MagicMock
 from optuna.trial import FixedTrial
 
 from auto_tune_weights_pipeline.constants import NavScreens, Platforms
 from auto_tune_weights_pipeline.tune import Objective
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
-from auto_tune_weights_pipeline.ml import CatboostTrainer
-import catboost as cb
+from auto_tune_weights_pipeline.ml import CatboostTrainer, PoolCacheInfo
 
 
 class TestObjective:
@@ -18,6 +20,14 @@ class TestObjective:
         )
         path_to_pool_cache_val = test_data_dir.joinpath(
             "./objective/pool_cache_with_features_2026_02_02_val_3_records.jsonl"
+        )
+        pool_cache_info_train = PoolCacheInfo(
+            data=pl.read_ndjson(path_to_pool_cache_train),
+            path_to_data=path_to_pool_cache_train,
+        )
+        pool_cache_info_val = PoolCacheInfo(
+            data=pl.read_ndjson(path_to_pool_cache_val),
+            path_to_data=path_to_pool_cache_val,
         )
         path_to_feature_names = test_data_dir.joinpath("./feature_names.txt")
 
@@ -84,8 +94,8 @@ class TestObjective:
             }
 
             objective = Objective(
-                path_to_pool_cache_train=path_to_pool_cache_train,
-                path_to_pool_cache_val=path_to_pool_cache_val,
+                pool_cache_info_train=pool_cache_info_train,
+                pool_cache_info_val=pool_cache_info_val,
                 features_pairs_generator=features_pairs_generator,
                 catboost_params={
                     "iterations": 50,

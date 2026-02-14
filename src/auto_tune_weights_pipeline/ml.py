@@ -1,16 +1,22 @@
 import typing as t
-
 import polars as pl
 import numpy as np
 import catboost as cb
 
 from loguru import logger
 from pathlib import Path
+from dataclasses import dataclass
 
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import BIG_NEGATIVE_DEFAULT_VALUE
 from auto_tune_weights_pipeline.types_ import StrPath
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
+
+
+@dataclass(frozen=True)
+class PoolCacheInfo:
+    data: pl.DataFrame
+    path_to_data: StrPath
 
 
 class CatBoostPoolProcessor:
@@ -116,12 +122,13 @@ class CatBoostPoolProcessor:
     @staticmethod
     def add_catboost_scores_to_pool_cache(
         trainer: "CatboostTrainer",
-        path_to_pool_cache_val: Path,
+        pool_cache_info_val: PoolCacheInfo,
         features_pairs_generator: FeaturesPairsGenerator,
         score_col_name: str = Columns.CATBOOST_SCORE_COL_NAME,
         output_path: t.Optional[StrPath] = None,
     ) -> StrPath:
-        pool_cache_val = pl.read_ndjson(str(path_to_pool_cache_val))
+        # pool_cache_val = pl.read_ndjson(str(pool_cache_val))
+        pool_cache_val = pool_cache_info_val.data
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
 
         raw_features_list = pool_cache_val[Columns.FEATURES_COL_NAME].to_list()
@@ -152,6 +159,7 @@ class CatBoostPoolProcessor:
         )
 
         if output_path is None:
+            path_to_pool_cache_val = pool_cache_info_val.path_to_data
             _name = (
                 path_to_pool_cache_val.name.replace(path_to_pool_cache_val.suffix, "")
                 + "_with_scores"
