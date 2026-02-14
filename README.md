@@ -12,6 +12,7 @@ $ uv run yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026
     --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_train.jsonl
 $ uv run yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026_02_01_val" \
     --format "<stringify_nan_and_infinity=%true>json" > ./data/pool_cache_with_features_2026_02_01_val.jsonl
+
 # Run tunner
 $ uv run cli.py --help
 $ uv run cli.py \
@@ -22,7 +23,7 @@ $ uv run cli.py \
     --timeout 600
 # Or just use bash script
 $ chmod +x run_tune_pipeline.sh
-$ ./run_tune_pipeline.sh
+$ ./scripts/run_tune_pipeline.sh
 # Optuna dashboards
 $ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 # Listening on http://127.0.0.1:8080/
@@ -36,8 +37,8 @@ $ uv run cli.py \
     --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
     --path-to-pretrained-model ./data/model.cb
 # Or just use bash script
-chmod +x get_gauc_for_pretrained_model.sh
-./get_gauc_for_pretrained_model.sh
+$ chmod +x get_gauc_for_pretrained_model.sh
+$ ./scripts/get_gauc_for_pretrained_model.sh
 ```
 
 #### _In marimo session_
