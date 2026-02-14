@@ -1,4 +1,5 @@
 import pytest
+import typing as t
 import polars as pl
 import numpy as np
 import catboost as cb
@@ -10,11 +11,21 @@ from auto_tune_weights_pipeline.constants import NavScreens, Platforms
 from auto_tune_weights_pipeline.tune import Objective
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.ml import CatboostTrainer, PoolCacheInfo
+from auto_tune_weights_pipeline.target_config import TargetConfig, TargetNames
+from auto_tune_weights_pipeline.event_names import EventNames
 
 
 class TestObjective:
     @pytest.mark.obj
     def test_objective_mock_training_only(self, test_data_dir, mock_dictionary_hub):
+        target_config: t.Final[dict] = {
+            TargetNames.WATCH_COVERAGE_30S: TargetConfig(
+                target_name=TargetNames.WATCH_COVERAGE_30S,
+                event_name=EventNames.WATCH_COVERAGE_RECORD,
+                view_threshold_sec=30.0,
+            )
+        }
+
         path_to_pool_cache_train = test_data_dir.joinpath(
             "./objective/pool_cache_with_features_2026_02_01_train_5_records.jsonl"
         )
@@ -61,7 +72,8 @@ class TestObjective:
                 return_value=mock_trainer_instance,
             ),
             patch(
-                "auto_tune_weights_pipeline.tune.GAUC", return_value=mock_gauc_instance
+                "auto_tune_weights_pipeline.metrics.utils.GAUC",
+                return_value=mock_gauc_instance,
             ),
             patch.object(CatboostTrainer, "train"),
             patch(
@@ -69,7 +81,7 @@ class TestObjective:
                 mock_add_scores,
             ),
             patch(
-                "auto_tune_weights_pipeline.tune.GAUC.get_summary"
+                "auto_tune_weights_pipeline.metrics.utils.GAUC.get_summary"
             ) as mock_get_summary,
         ):
             mock_get_summary.return_value = {
@@ -94,6 +106,7 @@ class TestObjective:
             }
 
             objective = Objective(
+                target_config=target_config,
                 pool_cache_info_train=pool_cache_info_train,
                 pool_cache_info_val=pool_cache_info_val,
                 features_pairs_generator=features_pairs_generator,
