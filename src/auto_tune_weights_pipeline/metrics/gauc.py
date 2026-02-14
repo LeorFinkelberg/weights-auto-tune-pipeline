@@ -76,7 +76,7 @@ class GAUC(Metric):
         label_exprs = []
         for config in configs:
             label_expr = config.create_label_expr(pool_cache).alias(
-                f"label_{config.name}"
+                f"label_{config.target_name}"
             )
             label_exprs.append(label_expr)
 
@@ -142,7 +142,7 @@ class GAUC(Metric):
                         "Mixed types in target_configs list. "
                         "All elements must be strings or all must be TargetConfig."
                     )
-                return [config.name for config in target_configs]
+                return [config.target_name for config in target_configs]
 
             else:
                 raise TypeError(
