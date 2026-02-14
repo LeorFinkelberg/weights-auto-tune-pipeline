@@ -28,27 +28,27 @@ $ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 # Listening on http://127.0.0.1:8080/
 # Hit Ctrl-C to quit.
 ```
-### _MARIMO / JupterHub etc._
-```bash
-$ git clone <repo>
-$ cd <repo>
-$ uv sync
-$ uv run marimo run
-```
-#### _GAUC Compute_
 
-In `marimo` session ...
+### _GAUC Compute_
+#### _Gets GAUC for pre-trained CatBoost model_
+```bash
+$ uv run cli.py \
+    --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
+    --path-to-pretrained-model ./data/model.cb
+```
+
+#### _In marimo session_
 ```python
 import typing as t
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
-from auto_tune_weights_pipeline.target_config import TargetConfig
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.target_config import TargetConfig, TargetNames
+from auto_tune_weights_pipeline.event_names import EventNames
 
 target_config: t.Final[dict] = {
-    "watch_coverage_30s": TargetConfig(
-        name="watch_coverage_30s",
-        event_name=Events.WATCH_COVERAGE_RECORD,
+    TargetNames.WATCH_COVERAGE_30S: TargetConfig(
+        target_name=TargetNames.WATCH_COVERAGE_30S,
+        event_name=EventNames.WATCH_COVERAGE_RECORD,
         view_threshold_sec=30.0,
     )
 }
@@ -67,7 +67,6 @@ print(summary)
 ```
 
 #### _ML-model training_
-
 ```python
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler, QuantileTransformer
@@ -75,13 +74,13 @@ from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
-from auto_tune_weights_pipeline.events import Events
+from auto_tune_weights_pipeline.event_names import EventNames
 from auto_tune_weights_pipeline.matrix_builder import AutoMatrixBuilder
 
 X_train, y_train, X_test, y_test = AutoMatrixBuilder.train_test_split(
     path_to_pool_cache_train="./data/pool_cache_with_features_2026_02_01_train.jsonl",
     path_to_pool_cache_test="./data/pool_cache_with_features_2026_02_02_test.jsonl",
-    target_label=Events.ACTION_PLAY,
+    target_label=EventNames.ACTION_PLAY,
     max_features=213,
 )
 

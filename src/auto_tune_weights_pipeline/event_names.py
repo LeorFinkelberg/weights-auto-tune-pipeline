@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-class Events(StrEnum):
+class EventNames(StrEnum):
     ACTION_PLAY = "actionPlay"
     LIKE = "actionLike"
     DISLIKE = "actionDislike"
