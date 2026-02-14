@@ -30,7 +30,12 @@ class LossFunctions(StrEnum):
 
 
 class CatboostTaskTypes(StrEnum):
-    CPU = "CPU"
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values) -> str:
+        return name.upper()
+
+    CPU = auto()
+    GPU = auto()
 
 
 class SummaryLogFields(StrEnum):
@@ -42,6 +47,7 @@ class SummaryLogFields(StrEnum):
     MAX = "max"
     MEDIAN = "median"
     GROUP_DETAILS = "group_details"
+    TARGET_DETAILS = "target_details"
     GAUC_VALID = "GAUC_valid"
 
     @classmethod
@@ -50,18 +56,6 @@ class SummaryLogFields(StrEnum):
 
 
 class YtProxyClusterNames(StrEnum):
-    """
-    Pattern:
-      - if auto():
-          YT_PROXY_{cluster-name} -> {cluster-name}.yt.vk.team
-          Example:
-              YT_PROXY_JUPITER = auto() # jupiter.yt.vk.team
-      - else:
-          required explicit value
-          Example:
-              YT_PROXY_MIRANDA = "miranda.yt.vk.team"
-    """
-
     @staticmethod
     def _generate_next_value_(name, start, count, last_values) -> str:
         _cluster_name = name.split("_")[-1].lower()
