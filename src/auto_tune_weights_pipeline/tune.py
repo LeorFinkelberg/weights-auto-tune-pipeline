@@ -13,6 +13,7 @@ from auto_tune_weights_pipeline.ml import (
 from auto_tune_weights_pipeline.target_config import TargetNames
 from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, NavScreens
 from auto_tune_weights_pipeline.metrics.utils import get_metric
+from auto_tune_weights_pipeline.utils import Timer
 
 
 class Objective:
@@ -49,15 +50,18 @@ class Objective:
             "consumption_time_weight", 0.0, 100.0
         )
 
-        features_table_train = self.features_pairs_generator.generate_features_table(
-            self.pool_cache_info_train.data,
-            like_weight=like_weight,
-            dislike_weight=dislike_weight,
-            consumption_time_weight=consumption_time_weight,
-        )
-        pairs_table_train = self.features_pairs_generator.generate_pairs_table(
-            features_table_train
-        )
+        with Timer.get_block_time("features and pairs"):
+            features_table_train = (
+                self.features_pairs_generator.generate_features_table(
+                    self.pool_cache_info_train.data,
+                    like_weight=like_weight,
+                    dislike_weight=dislike_weight,
+                    consumption_time_weight=consumption_time_weight,
+                )
+            )
+            pairs_table_train = self.features_pairs_generator.generate_pairs_table(
+                features_table_train
+            )
 
         pool_train: cb.Pool = CatBoostPoolProcessor(
             features_table_train, pairs_table_train

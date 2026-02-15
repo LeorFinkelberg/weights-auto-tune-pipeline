@@ -1,3 +1,4 @@
+import time
 import typing as t
 import json
 
@@ -8,11 +9,24 @@ import yt.wrapper as yt
 
 from pathlib import Path
 from loguru import logger
+from contextlib import contextmanager
 
 from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import YtProxyClusterNames, SummaryLogFields
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
+
+
+class Timer:
+    @staticmethod
+    @contextmanager
+    def get_block_time(label: str) -> float:
+        start = time.perf_counter()
+        try:
+            yield
+        finally:
+            end = time.perf_counter()
+            logger.debug(f"BLOCK TIME ({label}): {end - start}")
 
 
 # TODO: fixme
