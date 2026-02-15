@@ -191,9 +191,13 @@ class CatboostTrainer:
         self.ranker.fit(pool)
 
         logger.info("Ranker saving ...")
-        self.ranker.save_model(self.ranker_name)
+        _path_to_data = Path.cwd().joinpath("data")
+        if not _path_to_data.exists():
+            _path_to_data.mkdir(exist_ok=True)
 
-        if Path.cwd().joinpath(self.ranker_name).exists():
+        self.ranker.save_model(str(_path_to_data / self.ranker_name))
+
+        if (_path_to_data / self.ranker_name).exists():
             logger.info(f"Ranker saved as {self.ranker_name}")
         else:
             logger.warning("Model could not be saved ...")
