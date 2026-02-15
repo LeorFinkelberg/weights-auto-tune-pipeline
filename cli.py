@@ -72,6 +72,7 @@ setup_logging()
 @click.option("--load-if-exists/--no-load-if-exists", default=True)
 @click.option("--gc-after-trial/--no-gc-after-trial", default=True)
 @click.option("--show-progress-bar/--no-show-progress-bar", default=True)
+@click.option("--save-predictions/--no-save-predictions", default=False)
 @click.option("--calculate-regular-auc", type=click.BOOL, default=True)
 def main(
     path_to_pool_cache_train,
@@ -96,6 +97,7 @@ def main(
     load_if_exists,
     gc_after_trial,
     show_progress_bar,
+    save_predictions,
     calculate_regular_auc,
 ) -> None:
     target_config: t.Final[dict] = {
@@ -149,6 +151,7 @@ def main(
                 target_name=target_name,
                 metric_name=metric_name,
                 calculate_regular_auc=calculate_regular_auc,
+                save_predictions=save_predictions,
             ),
             n_trials=n_trials,
             timeout=timeout,
@@ -165,6 +168,9 @@ def main(
         trainer = CatboostTrainer()
         trainer.load(path_to_pretrained_model)
 
+        _model_name = path_to_pretrained_model.name.replace(
+            path_to_pretrained_model.suffix, ""
+        )
         get_metric(
             trainer=trainer,
             target_config=target_config,
@@ -176,6 +182,8 @@ def main(
             target_name=target_name,
             metric_name=metric_name,
             calculate_regular_auc=calculate_regular_auc,
+            model_name=_model_name,
+            save_predictions=save_predictions,
         )
 
 

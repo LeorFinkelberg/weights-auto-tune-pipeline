@@ -9,6 +9,12 @@ DICTIONARY_PROJECT_NAME_RECOMMENDER_UCP_VIDEO_AND_CLIPS = (
 )
 
 
+class Strings(StrEnum):
+    EMPTY = ""
+    BLANK = " "
+    UNDER_SCORE = "_"
+
+
 class Platforms(StrEnum):
     def _generate_next_value_(name, start, count, last_values) -> str:
         return name.lower()

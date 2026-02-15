@@ -19,6 +19,8 @@ def get_metric(
     target_details: SummaryLogFields = SummaryLogFields.TARGET_DETAILS,
     target_name: t.Union[str, TargetNames] = TargetNames.WATCH_COVERAGE_30S,
     metric_name: str = SummaryLogFields.GAUC_WEIGHTED,
+    model_name: str = "local_catboost",
+    save_predictions: bool = False,
     calculate_regular_auc: bool = True,
 ) -> float:
     _path_to_pool_cache_with_catboost_scores: StrPath = (
@@ -27,6 +29,8 @@ def get_metric(
             pool_cache_info_val=pool_cache_info_val,
             features_pairs_generator=features_pairs_generator,
             score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
+            model_name=model_name,
+            save_predictions=save_predictions,
         )
     )
 

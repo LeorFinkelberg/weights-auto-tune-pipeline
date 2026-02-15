@@ -23,6 +23,7 @@ class Objective:
         pool_cache_info_val: PoolCacheInfo,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
+        save_predictions: bool = False,
         nav_screen: t.Union[str, NavScreens] = NavScreens.VIDEO_FOR_YOU,
         platforms: TupleStrOrPlatforms = (Platforms.VK_VIDEO_ANDROID,),
         target_details=SummaryLogFields.TARGET_DETAILS,
@@ -41,6 +42,7 @@ class Objective:
         self.metric_name = metric_name
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
+        self.save_predictions = save_predictions
 
     def __call__(self, trial: Trial) -> float:
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
@@ -77,4 +79,5 @@ class Objective:
             target_name=self.target_name,
             metric_name=self.metric_name,
             calculate_regular_auc=self.calculate_regular_auc,
+            save_predictions=self.save_predictions,
         )

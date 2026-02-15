@@ -7,6 +7,7 @@ from loguru import logger
 from pathlib import Path
 from dataclasses import dataclass
 
+from auto_tune_weights_pipeline.constants import Strings
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import BIG_NEGATIVE_DEFAULT_VALUE
 from auto_tune_weights_pipeline.types_ import StrPath
@@ -129,6 +130,8 @@ class CatBoostPoolProcessor:
         features_pairs_generator: FeaturesPairsGenerator,
         score_col_name: str = Columns.CATBOOST_SCORE_COL_NAME,
         output_path: t.Optional[StrPath] = None,
+        model_name: t.Union[str] = None,
+        save_predictions: bool = False,
     ) -> Path:
         pool_cache_val = pool_cache_info_val.data
         logger.info(f"Loaded pool cache: {len(pool_cache_val)} rows")
@@ -153,7 +156,9 @@ class CatBoostPoolProcessor:
         X = np.array(X_list, dtype=np.float32)
         logger.info(f"Feature matrix shape: {X.shape}")
 
-        predictions = trainer.predict(X)
+        predictions = trainer.predict(
+            X, model_name=model_name, save_predictions=save_predictions
+        )
         logger.info(f"Got predictions: {len(predictions)}")
 
         pool_cache_with_scores = pool_cache_val.with_columns(
@@ -175,6 +180,8 @@ class CatBoostPoolProcessor:
 
 
 class CatboostTrainer:
+    path_to_data_dir = Path.cwd().joinpath("data")
+
     def __init__(
         self,
         params: t.Optional[dict] = None,
@@ -191,18 +198,24 @@ class CatboostTrainer:
         self.ranker.fit(pool)
 
         logger.info("Ranker saving ...")
-        _path_to_data = Path.cwd().joinpath("data")
-        if not _path_to_data.exists():
-            _path_to_data.mkdir(exist_ok=True)
+        if not self.path_to_data_dir.exists():
+            self.path_to_data_dir.mkdir(exist_ok=True)
 
-        self.ranker.save_model(str(_path_to_data / self.ranker_name))
+        self.ranker.save_model(str(self.path_to_data_dir / self.ranker_name))
 
-        if (_path_to_data / self.ranker_name).exists():
+        if (self.path_to_data_dir / self.ranker_name).exists():
             logger.info(f"Ranker saved as {self.ranker_name}")
         else:
             logger.warning("Model could not be saved ...")
 
-    def predict(self, X: np.ndarray, noise: float = 0.0) -> np.ndarray:
+    def predict(
+        self,
+        X: np.ndarray,
+        noise: float = 0.0,
+        model_name: t.Union[str] = None,
+        save_predictions: bool = False,
+        # predictions_file_name: str = "predictions.npz",
+    ) -> np.ndarray:
         if self.ranker is None:
             raise ValueError("Model not trained yet!")
 
@@ -211,6 +224,18 @@ class CatboostTrainer:
             predictions + noise * np.random.normal(size=predictions.size),
             nan=BIG_NEGATIVE_DEFAULT_VALUE,
         )
+        if save_predictions:
+            base_name = "predictions{}.npz"
+            predictions_file_name = (
+                base_name.format(Strings.UNDER_SCORE + model_name)
+                if model_name is not None
+                else Strings.EMPTY
+            )
+            path_to_predictions = self.path_to_data_dir / predictions_file_name
+            np.savez(path_to_predictions, predictions=predictions)
+
+            if path_to_predictions.exists():
+                logger.info("Predictions were successfully recorded")
 
         logger.debug(
             f"Raw predictions - min: {predictions.min():.4f}, "
