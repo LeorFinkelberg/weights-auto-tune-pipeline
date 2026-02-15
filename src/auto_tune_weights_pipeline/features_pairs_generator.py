@@ -173,8 +173,7 @@ class FeaturesPairsGenerator:
                         if fid in self.feature_to_idx:
                             idx = self.feature_to_idx[fid]
                             value = float(feat[1])
-                            if not np.isnan(value):
-                                result_matrix[i, idx] = round(value, 8)
+                            result_matrix[i, idx] = round(value, 8)
                     except (ValueError, TypeError, IndexError):
                         continue
 
