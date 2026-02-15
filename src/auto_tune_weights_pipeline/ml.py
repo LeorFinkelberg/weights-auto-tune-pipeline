@@ -214,7 +214,6 @@ class CatboostTrainer:
         noise: float = 0.0,
         model_name: t.Union[str] = None,
         save_predictions: bool = False,
-        # predictions_file_name: str = "predictions.npz",
     ) -> np.ndarray:
         if self.ranker is None:
             raise ValueError("Model not trained yet!")
