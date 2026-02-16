@@ -114,6 +114,7 @@ class TestObjective:
                     "iterations": 50,
                     "l2_leaf_reg": 3.0,
                 },
+                formula_path="fstorage:vk_video_266_1769078359_f",
                 nav_screen=NavScreens.VIDEO_FOR_YOU,
                 platforms=(Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
             )
