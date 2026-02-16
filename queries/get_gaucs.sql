@@ -12,7 +12,7 @@ $USER_TYPE = "vk";
 $RECOMMENDER_ID = 200;
 
 -- Vars
-$start_date = "2026-02-09";
+$start_date = "2026-02-10";
 $end_date = $start_date;
 $path_to_pool_cache = "//home/hc/ucp/vk_video/pool_caches/1d/";
 
@@ -143,6 +143,7 @@ $dislike_metrics_tbl = (
     SELECT 'dislike_samples' AS metric, SUM(n_total) AS value FROM $dislike_valid
 );
 
+-- Общая статистика
 $total_sessions_tbl = (
     SELECT 'total_sessions' AS metric, COUNT(*) AS value FROM $session_stats
 );
@@ -166,11 +167,16 @@ $empty_samples_val = (
 $empty_pct = (
     SELECT
         'empty_sessions_pct' AS metric,
-        100.0 * e.empty_sessions / u.total_unique_sessions AS value
+        IF(
+            u.total_unique_sessions > 0,
+            100.0 * e.empty_sessions / u.total_unique_sessions,
+            0.0
+        ) AS value
     FROM $empty_sessions_tbl e
     CROSS JOIN $total_unique_sessions_tbl u
 );
 
+-- Объединяем всё
 $all_metrics = (
     SELECT * FROM $watch_metrics_tbl
     UNION ALL
@@ -192,9 +198,9 @@ $all_metrics = (
 );
 
 SELECT
-    $formulaPath,
-    $start_date,
-    $watchCoverageThreshold,
+    $formulaPath AS formulaPath,
+    $start_date AS startDate,
+    $watchCoverageThreshold AS watchCoverageThreshold,
     t.*
 FROM $all_metrics AS t
 ORDER BY metric;
