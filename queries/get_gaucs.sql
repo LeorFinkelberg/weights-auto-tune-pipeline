@@ -25,7 +25,7 @@ $compute_auc = ($sum_ranks, $n_pos, $n_total) -> {
     );
 };
 
-DEFINE ACTION $get_gauc_by_formula_path($formulaPath, $watchCoverageThreshold) AS
+DEFINE ACTION $get_gauc($formulaPath, $watchCoverageThreshold) AS
 
 $metrics = (
     SELECT
@@ -198,7 +198,7 @@ END DEFINE;
 
 -- == START == --
 -- watchCoverageRecord = 30
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1769078359_f", 30);
+DO $get_gauc("fstorage:vk_video_266_1769078359_f", 30);
 DO $get_gauc("fstorage:vk_video_266_1770914142_u", 30);
 DO $get_gauc("fstorage:vk_video_310_1770883950_k", 30);
 DO $get_gauc("fstorage:vk_video_310_1770880753_v", 30);
@@ -210,7 +210,7 @@ DO $get_gauc("fstorage:vk_video_310_1770724317_p", 30);
 DO $get_gauc("fstorage:vk_video_282_1770382670_v", 30);
 
 -- watchCoverageRecord = 900
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1769078359_f", 900);
+DO $get_gauc("fstorage:vk_video_266_1769078359_f", 900);
 DO $get_gauc("fstorage:vk_video_266_1770914142_u", 900);
 DO $get_gauc("fstorage:vk_video_310_1770883950_k", 900);
 DO $get_gauc("fstorage:vk_video_310_1770880753_v", 900);
