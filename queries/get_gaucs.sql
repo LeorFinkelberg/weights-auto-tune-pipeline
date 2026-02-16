@@ -89,15 +89,6 @@ $empty_sessions_tbl = (
     WHERE n_total < 2
 );
 
-$valid_base_sessions_tbl = (
-    SELECT COUNT(*) AS valid_base_sessions
-    FROM $session_stats
-    WHERE n_total >= 2
-        AND watch_n_pos > 0 AND watch_n_pos < n_total
-        AND like_n_pos > 0 AND like_n_pos < n_total
-        AND dislike_n_pos > 0 AND dislike_n_pos < n_total
-);
-
 $watch_valid = (
     SELECT
         n_total,
@@ -172,23 +163,11 @@ $empty_samples_val = (
     SELECT 'empty_samples' AS metric, empty_samples AS value FROM $empty_sessions_tbl
 );
 
-$valid_base_sessions_val = (
-    SELECT 'valid_base_sessions' AS metric, valid_base_sessions AS value FROM $valid_base_sessions_tbl
-);
-
 $empty_pct = (
     SELECT
         'empty_sessions_pct' AS metric,
         100.0 * e.empty_sessions / u.total_unique_sessions AS value
     FROM $empty_sessions_tbl e
-    CROSS JOIN $total_unique_sessions_tbl u
-);
-
-$valid_base_pct = (
-    SELECT
-        'valid_base_pct' AS metric,
-        100.0 * v.valid_base_sessions / u.total_unique_sessions AS value
-    FROM $valid_base_sessions_tbl v
     CROSS JOIN $total_unique_sessions_tbl u
 );
 
@@ -210,10 +189,6 @@ $all_metrics = (
     SELECT * FROM $empty_samples_val
     UNION ALL
     SELECT * FROM $empty_pct
-    UNION ALL
-    SELECT * FROM $valid_base_sessions_val
-    UNION ALL
-    SELECT * FROM $valid_base_pct
 );
 
 SELECT * FROM $all_metrics
@@ -224,24 +199,24 @@ END DEFINE;
 -- == START == --
 -- watchCoverageRecord = 30
 DO $get_gauc_by_formula_path("fstorage:vk_video_266_1769078359_f", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770914142_u", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770883950_k", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770880753_v", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770800906_w", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770751611_n", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770737548_e", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770725758_w", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770724317_p", 30);
-DO $get_gauc_by_formula_path("fstorage:vk_video_282_1770382670_v", 30);
+DO $get_gauc("fstorage:vk_video_266_1770914142_u", 30);
+DO $get_gauc("fstorage:vk_video_310_1770883950_k", 30);
+DO $get_gauc("fstorage:vk_video_310_1770880753_v", 30);
+DO $get_gauc("fstorage:vk_video_310_1770800906_w", 30);
+DO $get_gauc("fstorage:vk_video_266_1770751611_n", 30);
+DO $get_gauc("fstorage:vk_video_266_1770737548_e", 30);
+DO $get_gauc("fstorage:vk_video_266_1770725758_w", 30);
+DO $get_gauc("fstorage:vk_video_310_1770724317_p", 30);
+DO $get_gauc("fstorage:vk_video_282_1770382670_v", 30);
 
 -- watchCoverageRecord = 900
 DO $get_gauc_by_formula_path("fstorage:vk_video_266_1769078359_f", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770914142_u", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770883950_k", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770880753_v", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770800906_w", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770751611_n", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770737548_e", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_266_1770725758_w", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_310_1770724317_p", 900);
-DO $get_gauc_by_formula_path("fstorage:vk_video_282_1770382670_v", 900);
+DO $get_gauc("fstorage:vk_video_266_1770914142_u", 900);
+DO $get_gauc("fstorage:vk_video_310_1770883950_k", 900);
+DO $get_gauc("fstorage:vk_video_310_1770880753_v", 900);
+DO $get_gauc("fstorage:vk_video_310_1770800906_w", 900);
+DO $get_gauc("fstorage:vk_video_266_1770751611_n", 900);
+DO $get_gauc("fstorage:vk_video_266_1770737548_e", 900);
+DO $get_gauc("fstorage:vk_video_266_1770725758_w", 900);
+DO $get_gauc("fstorage:vk_video_310_1770724317_p", 900);
+DO $get_gauc("fstorage:vk_video_282_1770382670_v", 900);
