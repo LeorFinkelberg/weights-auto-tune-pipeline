@@ -23,6 +23,7 @@ class Objective:
         pool_cache_info_val: PoolCacheInfo,
         features_pairs_generator: FeaturesPairsGenerator,
         catboost_params: dict,
+        formula_path: str,
         save_predictions: bool = False,
         nav_screen: t.Union[str, NavScreens] = NavScreens.VIDEO_FOR_YOU,
         platforms: TupleStrOrPlatforms = (Platforms.VK_VIDEO_ANDROID,),
@@ -42,6 +43,7 @@ class Objective:
         self.metric_name = metric_name
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
+        self.formula_path = formula_path
         self.save_predictions = save_predictions
 
     def __call__(self, trial: Trial) -> float:
@@ -75,6 +77,7 @@ class Objective:
             features_pairs_generator=self.features_pairs_generator,
             nav_screen=self.nav_screen,
             platforms=self.platforms,
+            formula_path=self.formula_path,
             target_details=self.target_details,
             target_name=self.target_name,
             metric_name=self.metric_name,

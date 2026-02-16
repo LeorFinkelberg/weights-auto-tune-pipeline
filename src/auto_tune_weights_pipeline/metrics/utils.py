@@ -14,6 +14,7 @@ def get_metric(
     target_config: dict,
     pool_cache_info_val: PoolCacheInfo,
     features_pairs_generator: FeaturesPairsGenerator,
+    formula_path: str,
     nav_screen: NavScreens = NavScreens.VIDEO_FOR_YOU,
     platforms: TupleStrOrPlatforms = (Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
     target_details: SummaryLogFields = SummaryLogFields.TARGET_DETAILS,
@@ -42,6 +43,7 @@ def get_metric(
             session_col_name=Columns.RID_COL_NAME,
             nav_screen=nav_screen,
             platforms=platforms,
+            formula_path=formula_path,
             calculate_regular_auc=calculate_regular_auc,
         )
     )

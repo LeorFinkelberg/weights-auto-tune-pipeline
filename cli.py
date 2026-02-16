@@ -51,6 +51,9 @@ setup_logging()
     multiple=True,
 )
 @click.option(
+    "--formula-path", type=click.STRING, default="fstorage:vk_video_266_1769078359_f"
+)
+@click.option(
     "--target-details", type=click.STRING, default=SummaryLogFields.TARGET_DETAILS
 )
 @click.option(
@@ -81,6 +84,7 @@ def main(
     path_to_pretrained_model,
     nav_screen,
     platforms,
+    formula_path,
     target_details,
     target_name,
     metric_name,
@@ -147,6 +151,7 @@ def main(
                 },
                 nav_screen=nav_screen,
                 platforms=platforms,
+                formula_path=formula_path,
                 target_details=target_details,
                 target_name=target_name,
                 metric_name=metric_name,
@@ -178,6 +183,7 @@ def main(
             features_pairs_generator=features_pairs_generator,
             nav_screen=nav_screen,
             platforms=platforms,
+            formula_path=formula_path,
             target_details=target_details,
             target_name=target_name,
             metric_name=metric_name,
