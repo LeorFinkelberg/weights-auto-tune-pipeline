@@ -16,11 +16,15 @@ $ uv run yt --proxy jupiter.yt.vk.team read "//home/.../pool_cache_features_2026
 # Run tunner
 $ uv run cli.py --help
 $ uv run cli.py \
-    --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl
-    --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl
+    --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl \
+    --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
+    --formula-path fstorage:vk_video_266_1769078359_f \
     --loss-function PairLogitPairwise \
-    --n-trials 10
-    --timeout 600
+    --depth 6 \
+    --timeout 3600 \
+    --n-trials 500 \
+    --no-load-if-exists \
+    --save-predictions
 # Or just use bash script
 $ chmod +x run_tune_pipeline.sh
 $ ./scripts/run_tune_pipeline.sh
@@ -35,7 +39,9 @@ $ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 ```bash
 $ uv run cli.py \
     --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
-    --path-to-pretrained-model ./data/model.cb
+    --path-to-pretrained-model ./data/model_vk_video_266_1769078359_f.cb \
+    --formula-path fstorage:vk_video_266_1769078359_f \
+    --save-predictions
 # Or just use bash script
 $ chmod +x get_gauc_for_pretrained_model.sh
 $ ./scripts/get_gauc_for_pretrained_model.sh
