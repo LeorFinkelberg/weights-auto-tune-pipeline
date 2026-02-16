@@ -143,7 +143,6 @@ $dislike_metrics_tbl = (
     SELECT 'dislike_samples' AS metric, SUM(n_total) AS value FROM $dislike_valid
 );
 
--- Общая статистика
 $total_sessions_tbl = (
     SELECT 'total_sessions' AS metric, COUNT(*) AS value FROM $session_stats
 );
@@ -172,7 +171,6 @@ $empty_pct = (
     CROSS JOIN $total_unique_sessions_tbl u
 );
 
--- Объединяем всё
 $all_metrics = (
     SELECT * FROM $watch_metrics_tbl
     UNION ALL
@@ -193,7 +191,12 @@ $all_metrics = (
     SELECT * FROM $empty_pct
 );
 
-SELECT $formulaPath, $start_date, t.* FROM $all_metrics AS t
+SELECT
+    $formulaPath,
+    $start_date,
+    $watchCoverageThreshold,
+    t.*
+FROM $all_metrics AS t
 ORDER BY metric;
 
 END DEFINE;
