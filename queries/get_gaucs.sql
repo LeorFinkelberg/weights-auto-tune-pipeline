@@ -12,8 +12,8 @@ $USER_TYPE = "vk";
 $RECOMMENDER_ID = 200;
 
 -- Vars
-$start_date = "2026-02-07";
-$end_date = "2026-02-07";
+$start_date = "2026-02-09";
+$end_date = $start_date;
 $path_to_pool_cache = "//home/hc/ucp/vk_video/pool_caches/1d/";
 
 -- AUX functions
@@ -143,6 +143,7 @@ $dislike_metrics_tbl = (
     SELECT 'dislike_samples' AS metric, SUM(n_total) AS value FROM $dislike_valid
 );
 
+-- Общая статистика
 $total_sessions_tbl = (
     SELECT 'total_sessions' AS metric, COUNT(*) AS value FROM $session_stats
 );
@@ -171,6 +172,7 @@ $empty_pct = (
     CROSS JOIN $total_unique_sessions_tbl u
 );
 
+-- Объединяем всё
 $all_metrics = (
     SELECT * FROM $watch_metrics_tbl
     UNION ALL
@@ -191,7 +193,7 @@ $all_metrics = (
     SELECT * FROM $empty_pct
 );
 
-SELECT * FROM $all_metrics
+SELECT $formulaPath, $start_date, t.* FROM $all_metrics AS t
 ORDER BY metric;
 
 END DEFINE;
@@ -199,7 +201,6 @@ END DEFINE;
 -- == START == --
 -- watchCoverageRecord = 30
 DO $get_gauc("fstorage:vk_video_266_1769078359_f", 30);
-DO $get_gauc("fstorage:vk_video_266_1770914142_u", 30);
 DO $get_gauc("fstorage:vk_video_310_1770883950_k", 30);
 DO $get_gauc("fstorage:vk_video_310_1770880753_v", 30);
 DO $get_gauc("fstorage:vk_video_310_1770800906_w", 30);
@@ -211,7 +212,6 @@ DO $get_gauc("fstorage:vk_video_282_1770382670_v", 30);
 
 -- watchCoverageRecord = 900
 DO $get_gauc("fstorage:vk_video_266_1769078359_f", 900);
-DO $get_gauc("fstorage:vk_video_266_1770914142_u", 900);
 DO $get_gauc("fstorage:vk_video_310_1770883950_k", 900);
 DO $get_gauc("fstorage:vk_video_310_1770880753_v", 900);
 DO $get_gauc("fstorage:vk_video_310_1770800906_w", 900);
