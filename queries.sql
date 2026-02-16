@@ -34,7 +34,7 @@ LIMIT 500000
 -- === COMPUTE GAUC ===
 use jupiter;
 
-PRAGMA yt.DefaultOperationWeight = "10.0";
+PRAGMA yt.DefaultOperationWeight = "1000.0";
 PRAGMA yt.InferSchema = "1";
 PRAGMA yt.MaxRowWeight = "128M";
 PRAGMA yt.StaticPool = "ucp-vkvideo-pool-cache";
@@ -49,6 +49,13 @@ $path_to_pool_cache = "//home/hc/ucp/vk_video/pool_caches/1d/2026-02-02";
 $formulaPath = "fstorage:vk_video_266_1769078359_f";
 $watchCoverageThreshold = 30;
 
+$compute_auc = ($sum_ranks, $n_pos, $n_total) -> {
+    RETURN IF(
+        $n_pos > 0 AND $n_pos < $n_total,
+        1.0 * ($sum_ranks - $n_pos * ($n_pos + 1) / 2) / ($n_pos * ($n_total - $n_pos)),
+        NULL
+    );
+};
 
 $metrics = (
     SELECT
@@ -74,7 +81,7 @@ $ranked = (
         like_label,
         dislike_label,
         score,
-        ROW_NUMBER() OVER (PARTITION BY rid ORDER BY score ASC) - 1 AS rn
+        ROW_NUMBER() OVER (PARTITION BY rid ORDER BY score ASC) - 1 AS rang
     FROM $metrics
 );
 
@@ -84,13 +91,13 @@ $session_stats = (
         COUNT(*) AS n_total,
 
         SUM(watch_label) AS watch_n_pos,
-        SUM(IF(watch_label == 1, rn + 1, 0)) AS watch_sum_ranks,
+        SUM(IF(watch_label == 1, rang + 1, 0)) AS watch_sum_ranks,
 
         SUM(like_label) AS like_n_pos,
-        SUM(IF(like_label == 1, rn + 1, 0)) AS like_sum_ranks,
+        SUM(IF(like_label == 1, rang + 1, 0)) AS like_sum_ranks,
 
         SUM(dislike_label) AS dislike_n_pos,
-        SUM(IF(dislike_label == 1, rn + 1, 0)) AS dislike_sum_ranks
+        SUM(IF(dislike_label == 1, rang + 1, 0)) AS dislike_sum_ranks
     FROM $ranked
     GROUP BY rid
     HAVING COUNT(*) >= 2
@@ -99,8 +106,7 @@ $session_stats = (
 $watch_valid = (
     SELECT
         n_total,
-        1.0 * (watch_sum_ranks - watch_n_pos * (watch_n_pos + 1) / 2) /
-        (watch_n_pos * (n_total - watch_n_pos)) AS auc
+        $compute_auc(watch_sum_ranks, watch_n_pos, n_total) AS auc
     FROM $session_stats
     WHERE watch_n_pos > 0 AND watch_n_pos < n_total
 );
@@ -108,8 +114,7 @@ $watch_valid = (
 $like_valid = (
     SELECT
         n_total,
-        1.0 * (like_sum_ranks - like_n_pos * (like_n_pos + 1) / 2) /
-        (like_n_pos * (n_total - like_n_pos)) AS auc
+        $compute_auc(like_sum_ranks, like_n_pos, n_total) AS auc
     FROM $session_stats
     WHERE like_n_pos > 0 AND like_n_pos < n_total
 );
@@ -117,46 +122,55 @@ $like_valid = (
 $dislike_valid = (
     SELECT
         n_total,
-        1.0 * (dislike_sum_ranks - dislike_n_pos * (dislike_n_pos + 1) / 2) /
-        (dislike_n_pos * (n_total - dislike_n_pos)) AS auc
+        $compute_auc(dislike_sum_ranks, dislike_n_pos, n_total) AS auc
     FROM $session_stats
     WHERE dislike_n_pos > 0 AND dislike_n_pos < n_total
 );
 
+$watch_metrics = (
+    SELECT 'GAUCSimple_watch_coverage' AS metric, AVG(auc) AS value FROM $watch_valid
+    UNION ALL
+    SELECT 'GAUCWeighted_watch_coverage' AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $watch_valid
+    UNION ALL
+    SELECT 'watch_sessions' AS metric, COUNT(*) AS value FROM $watch_valid
+    UNION ALL
+    SELECT 'watch_samples' AS metric, SUM(n_total) AS value FROM $watch_valid
+);
+
+$like_metrics = (
+    SELECT 'GAUCSimple_like' AS metric, AVG(auc) AS value FROM $like_valid
+    UNION ALL
+    SELECT 'GAUCWeighted_like' AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $like_valid
+    UNION ALL
+    SELECT 'like_sessions' AS metric, COUNT(*) AS value FROM $like_valid
+    UNION ALL
+    SELECT 'like_samples' AS metric, SUM(n_total) AS value FROM $like_valid
+);
+
+$dislike_metrics = (
+    SELECT 'GAUCSimple_dislike' AS metric, AVG(auc) AS value FROM $dislike_valid
+    UNION ALL
+    SELECT 'GAUCWeighted_dislike' AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $dislike_valid
+    UNION ALL
+    SELECT 'dislike_sessions' AS metric, COUNT(*) AS value FROM $dislike_valid
+    UNION ALL
+    SELECT 'dislike_samples' AS metric, SUM(n_total) AS value FROM $dislike_valid
+);
+
+$global_metrics = (
+    SELECT 'total_sessions' AS metric, COUNT(*) AS value FROM $session_stats
+    UNION ALL
+    SELECT 'total_samples' AS metric, SUM(n_total) AS value FROM $session_stats
+);
+
 $all_metrics = (
-    SELECT "GAUCSimple_watch_coverage" AS metric, AVG(auc) AS value FROM $watch_valid
+    SELECT * FROM $watch_metrics
     UNION ALL
-    SELECT "GAUCWeighted_watch_coverage" AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $watch_valid
+    SELECT * FROM $like_metrics
     UNION ALL
-    SELECT "watch_sessions" AS metric, COUNT(*) AS value FROM $watch_valid
+    SELECT * FROM $dislike_metrics
     UNION ALL
-    SELECT "watch_samples" AS metric, SUM(n_total) AS value FROM $watch_valid
-
-    UNION ALL
-
-    SELECT "GAUCSimple_like_simple" AS metric, AVG(auc) AS value FROM $like_valid
-    UNION ALL
-    SELECT "GAUCWeighted_like_weighted" AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $like_valid
-    UNION ALL
-    SELECT "like_sessions" AS metric, COUNT(*) AS value FROM $like_valid
-    UNION ALL
-    SELECT "like_samples" AS metric, SUM(n_total) AS value FROM $like_valid
-
-    UNION ALL
-
-    SELECT "GAUCSimple_dislike_simple" AS metric, AVG(auc) AS value FROM $dislike_valid
-    UNION ALL
-    SELECT "GAUCWeighted_dislike_weighted" AS metric, (SUM(auc * n_total) / SUM(n_total)) AS value FROM $dislike_valid
-    UNION ALL
-    SELECT "dislike_sessions" AS metric, COUNT(*) AS value FROM $dislike_valid
-    UNION ALL
-    SELECT "dislike_samples" AS metric, SUM(n_total) AS value FROM $dislike_valid
-
-    UNION ALL
-
-    SELECT "total_sessions" AS metric, COUNT(*) AS value FROM $session_stats
-    UNION ALL
-    SELECT "total_samples" AS metric, SUM(n_total) AS value FROM $session_stats
+    SELECT * FROM $global_metrics
 );
 
 SELECT * FROM $all_metrics
