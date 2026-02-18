@@ -86,6 +86,10 @@ class FeaturesPairsGenerator:
     def _consumption_time_batch_impl(
         view_times: pl.Series, durations: pl.Series
     ) -> pl.Series:
+        """
+        NOTE:
+            https://confluence.vk.team/pages/viewpage.action?pageId=1226927241#id-Таргетформулы-5.Изменениелогикисвязаннойсридами
+        """
         v = view_times.to_numpy().astype(np.float64)
         d = durations.to_numpy().astype(np.float64)
 
