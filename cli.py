@@ -20,6 +20,7 @@ from auto_tune_weights_pipeline.constants import (
 from auto_tune_weights_pipeline.ml import PoolCacheInfo, CatboostTrainer
 from auto_tune_weights_pipeline.target_config import TargetConfig, TargetNames
 from auto_tune_weights_pipeline.metrics.utils import get_metric
+from auto_tune_weights_pipeline.columns import Columns
 
 setup_logging()
 
@@ -60,6 +61,7 @@ setup_logging()
     "--target-name", type=click.STRING, default=TargetNames.WATCH_COVERAGE_30S
 )
 @click.option("--metric-name", default=SummaryLogFields.GAUC_WEIGHTED)
+@click.option("--session-col-name", type=click.STRING, default=Columns.RID_COL_NAME)
 @click.option("--iterations", type=click.INT, default=150)
 @click.option("--depth", type=click.INT, default=6)
 @click.option("--l2-leaf-reg", type=click.FLOAT, default=3.0)
@@ -88,6 +90,7 @@ def main(
     target_details,
     target_name,
     metric_name,
+    session_col_name,
     iterations,
     depth,
     l2_leaf_reg,
@@ -155,6 +158,7 @@ def main(
                 target_details=target_details,
                 target_name=target_name,
                 metric_name=metric_name,
+                session_col_name=session_col_name,
                 calculate_regular_auc=calculate_regular_auc,
                 save_predictions=save_predictions,
             ),
@@ -187,6 +191,7 @@ def main(
             target_details=target_details,
             target_name=target_name,
             metric_name=metric_name,
+            session_col_name=session_col_name,
             calculate_regular_auc=calculate_regular_auc,
             model_name=_model_name,
             save_predictions=save_predictions,

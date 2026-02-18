@@ -15,6 +15,7 @@ def get_metric(
     pool_cache_info_val: PoolCacheInfo,
     features_pairs_generator: FeaturesPairsGenerator,
     formula_path: str,
+    session_col_name: str,
     nav_screen: NavScreens = NavScreens.VIDEO_FOR_YOU,
     platforms: TupleStrOrPlatforms = (Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
     target_details: SummaryLogFields = SummaryLogFields.TARGET_DETAILS,
@@ -40,7 +41,8 @@ def get_metric(
         metric.calculate_metric(
             target_configs=target_config,
             score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
-            session_col_name=Columns.RID_COL_NAME,
+            session_col_name=session_col_name,
+            # session_col_name=Columns.RID_COL_NAME,
             nav_screen=nav_screen,
             platforms=platforms,
             formula_path=formula_path,

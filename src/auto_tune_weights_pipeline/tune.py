@@ -3,6 +3,7 @@ import catboost as cb
 
 from optuna.trial._trial import Trial
 
+from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.types_ import TupleStrOrPlatforms
 from auto_tune_weights_pipeline.ml import (
@@ -30,6 +31,7 @@ class Objective:
         target_details=SummaryLogFields.TARGET_DETAILS,
         target_name=TargetNames.WATCH_COVERAGE_30S,
         metric_name=SummaryLogFields.GAUC_WEIGHTED,
+        session_col_name=Columns.RID_COL_NAME,
         calculate_regular_auc=True,
     ) -> None:
         self.target_config = target_config
@@ -41,6 +43,7 @@ class Objective:
         self.target_details = target_details
         self.target_name = target_name
         self.metric_name = metric_name
+        self.session_col_name = session_col_name
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
         self.formula_path = formula_path
@@ -81,6 +84,7 @@ class Objective:
             target_details=self.target_details,
             target_name=self.target_name,
             metric_name=self.metric_name,
+            session_col_name=self.session_col_name,
             calculate_regular_auc=self.calculate_regular_auc,
             save_predictions=self.save_predictions,
         )

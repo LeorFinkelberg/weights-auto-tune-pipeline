@@ -2,6 +2,7 @@ from enum import StrEnum
 
 
 class Columns(StrEnum):
+    USER_ID = "userId"
     RID_COL_NAME = "rid"
     SCORE_COL_NAME = "score"
     CATBOOST_SCORE_COL_NAME = "catboost_score"
