@@ -7,6 +7,7 @@ PRAGMA yt.StaticPool = "ucp-vkvideo-pool-cache";
 
 INSERT INTO `//home/.../vk_video/pool_cache_features_2026-02-01_train` WITH TRUNCATE
 SELECT
+    `userId`,
     `typeId`,
     `userType`,
     `recommenderId`,
