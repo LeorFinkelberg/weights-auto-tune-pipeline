@@ -124,7 +124,8 @@ def main(
     )
 
     if path_to_pretrained_model is None:
-        logger.info("=== TARGET EVENT WEIGHTING MODE ===")
+        msg = f"=== TARGET EVENT WEIGHTING MODE (GroupBy: {session_col_name!r}) ==="
+        logger.info(msg)
 
         pool_cache_info_train = PoolCacheInfo(
             data=pl.read_ndjson(path_to_pool_cache_train),
