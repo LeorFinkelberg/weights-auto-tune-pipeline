@@ -1,7 +1,6 @@
 import abc
 import typing as t
 from dataclasses import dataclass
-from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.target_config import TargetConfig
 
 from auto_tune_weights_pipeline.types_ import StrPath
@@ -15,8 +14,8 @@ class Metric(abc.ABC):
     def calculate_metric(
         self,
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
-        session_col_name: str = Columns.RID_COL_NAME,
-        score_col_name: str = Columns.SCORE_COL_NAME,
+        session_col_name: str,
+        score_col_name: str,
     ) -> float:
         """Computes metric."""
 

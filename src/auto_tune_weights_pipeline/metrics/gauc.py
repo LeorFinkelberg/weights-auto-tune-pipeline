@@ -24,7 +24,7 @@ class GAUC(Metric):
     def calculate_metric(
         self,
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
-        session_col_name: str = Columns.RID_COL_NAME,
+        session_col_name: str,
         score_col_name: str = Columns.SCORE_COL_NAME,
         platforms: tuple[t.Union[str, Platforms], ...] = (Platforms.VK_VIDEO_ANDROID,),
         nav_screen: str = NavScreens.VIDEO_FOR_YOU,
@@ -86,7 +86,7 @@ class GAUC(Metric):
         self,
         pool_cache: pl.DataFrame,
         target_configs: t.Union[list[TargetConfig], list[str], dict[str, TargetConfig]],
-        session_col_name: str = Columns.RID_COL_NAME,
+        session_col_name: str,
         score_col_name: str = Columns.SCORE_COL_NAME,
         calculate_regular_auc: bool = True,
     ) -> dict[str, dict[str, t.Any]]:

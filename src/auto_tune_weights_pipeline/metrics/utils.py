@@ -42,7 +42,6 @@ def get_metric(
             target_configs=target_config,
             score_col_name=Columns.CATBOOST_SCORE_COL_NAME,
             session_col_name=session_col_name,
-            # session_col_name=Columns.RID_COL_NAME,
             nav_screen=nav_screen,
             platforms=platforms,
             formula_path=formula_path,
