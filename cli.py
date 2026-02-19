@@ -66,7 +66,11 @@ setup_logging()
     "--target-name", type=click.STRING, default=TargetNames.WATCH_COVERAGE_30S
 )
 @click.option("--metric-name", default=SummaryLogFields.GAUC_WEIGHTED)
-@click.option("--session-col-name", type=click.STRING, default=Columns.RID_COL_NAME)
+@click.option(
+    "--session-col-name",
+    type=click.Choice([Columns.RID_COL_NAME.value, Columns.USER_ID_COL_NAME.value]),
+    default=Columns.RID_COL_NAME,
+)
 @click.option("--alpha", type=click.FLOAT, default=1.0)
 @click.option("--iterations", type=click.INT, default=150)
 @click.option("--depth", type=click.INT, default=6)
