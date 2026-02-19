@@ -29,7 +29,6 @@ class Objective:
         catboost_params: dict,
         formula_path: str,
         session_col_name: str,
-        use_baseline_model: bool,
         alpha: float = 1.0,
         save_predictions: bool = False,
         path_to_baseline_model: t.Optional[Path] = None,
@@ -52,14 +51,14 @@ class Objective:
         self.metric_name = metric_name
         self.session_col_name = session_col_name
         self.alpha = alpha
-        self.use_baseline_model = use_baseline_model
         self.calculate_regular_auc = calculate_regular_auc
         self.catboost_params = catboost_params
         self.formula_path = formula_path
         self.save_predictions = save_predictions
 
+        self.use_baseline_model = bool(self.path_to_baseline_model or None)
         if np.isclose(self.alpha, 1.0) and self.use_baseline_model:
-            _msg = f"If use_baseline_model = True, then alpha must be < 1.0 [alpha = {alpha:.4g}]"
+            _msg = f"When use_baseline_model = True, then alpha must be < 1.0 [alpha = {alpha:.4g}]"
             logger.error(_msg)
             raise ValueError(_msg)
 

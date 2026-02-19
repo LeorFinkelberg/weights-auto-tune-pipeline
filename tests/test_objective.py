@@ -119,7 +119,6 @@ class TestObjective:
                 session_col_name=Columns.RID_COL_NAME,
                 nav_screen=NavScreens.VIDEO_FOR_YOU,
                 platforms=(Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
-                use_baseline_model=False,
             )
 
             trial = FixedTrial(

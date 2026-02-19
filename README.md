@@ -29,6 +29,22 @@ $ uv run cli.py \
 # Or just use bash script
 $ chmod +x run_tune_pipeline.sh
 $ ./scripts/run_tune_pipeline.sh
+
+# Run tunner (delta optimize with Optuna)
+uv run cli.py \
+    --path-to-pool-cache-train ./data/pool_cache_with_features_2026_02_01_train.jsonl \
+    --path-to-pool-cache-val ./data/pool_cache_with_features_2026_02_02_val.jsonl \
+	--path-to-baseline-model ./data/model_vk_video_266_1769078359_f.cb \
+	--alpha 0.5 \
+    --formula-path fstorage:vk_video_266_1769078359_f \
+    --loss-function PairLogitPairwise \
+    --depth 3 \
+    --timeout 600 \
+    --n-trials 1 \
+    --no-load-if-exists \
+    --no-save-predictions \
+	--no-calculate-regular-auc
+
 # Optuna dashboards
 $ uv run optuna-dashboard sqlite:///tune_target_events_weights.db
 # Listening on http://127.0.0.1:8080/

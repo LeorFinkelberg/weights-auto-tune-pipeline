@@ -80,7 +80,6 @@ setup_logging()
 @click.option("--timeout", type=click.FLOAT, default=120)
 @click.option("--direction", type=click.STRING, default="maximize")
 @click.option("--study-name", type=click.STRING, default="tune_target_events_weights")
-@click.option("--use-baseline-model/--no-use-baseline-model", default=False)
 @click.option("--load-if-exists/--no-load-if-exists", default=True)
 @click.option("--gc-after-trial/--no-gc-after-trial", default=True)
 @click.option("--show-progress-bar/--no-show-progress-bar", default=True)
@@ -99,7 +98,6 @@ def main(
     target_name,
     metric_name,
     session_col_name,
-    use_baseline_model,
     alpha,
     iterations,
     depth,
@@ -172,7 +170,6 @@ def main(
                 metric_name=metric_name,
                 session_col_name=session_col_name,
                 alpha=alpha,
-                use_baseline_model=use_baseline_model,
                 calculate_regular_auc=calculate_regular_auc,
                 save_predictions=save_predictions,
             ),
