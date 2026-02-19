@@ -99,12 +99,14 @@ class Objective:
         consumption_time_weight = trial.suggest_float(
             "consumption_time_weight", 0.0, 100.0
         )
+        smooth = trial.suggest_float("smooth", 0.0, 1.0)
 
         features_table_train = self.features_pairs_generator.generate_features_table(
             self.pool_cache_info_train.data,
             like_weight=like_weight,
             dislike_weight=dislike_weight,
             consumption_time_weight=consumption_time_weight,
+            smooth=smooth,
         )
         pairs_table_train = self.features_pairs_generator.generate_pairs_table(
             features_table_train

@@ -126,6 +126,7 @@ class TestObjective:
                     "like_weight": 5.0,
                     "dislike_weight": 14.0,
                     "consumption_time_weight": 0.41,
+                    "smooth": 0.25,
                 }
             )
 

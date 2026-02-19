@@ -84,7 +84,7 @@ class FeaturesPairsGenerator:
 
     @staticmethod
     def _consumption_time_batch_impl(
-        view_times: pl.Series, durations: pl.Series
+        view_times: pl.Series, durations: pl.Series, smooth: float
     ) -> pl.Series:
         """
         NOTE:
@@ -103,9 +103,7 @@ class FeaturesPairsGenerator:
         d_masked = d[mask]
 
         magic_duration = (
-            1.27494682e-05 * d_masked * d_masked
-            + 2.29489044e-02 * d_masked
-            + 3.18074092e01
+            1.27494682e-05 * d_masked**2 + 2.29489044e-02 * d_masked + 3.18074092e01
         )
         nwt = np.where(
             d_masked > 7200.0, 850.0, np.minimum(magic_duration, d_masked / 2.0)
@@ -115,7 +113,6 @@ class FeaturesPairsGenerator:
         regain_coeff = d_masked / (d_masked - nwt + click_weight)
         nw_time = regain_coeff * np.maximum(v_masked - nwt, click_weight)
 
-        smooth = 0.25
         U = 7200.0
         C = 600.0
         this_clamp = np.minimum(nw_time, U)
@@ -132,13 +129,13 @@ class FeaturesPairsGenerator:
         return pl.Series(result)
 
     def consumption_time_batch(
-        self, view_times: pl.Expr, durations: pl.Expr
+        self, view_times: pl.Expr, durations: pl.Expr, smooth: float
     ) -> pl.Expr:
         return pl.struct(
             [view_times.alias("viewTimeSec"), durations.alias("durationSeconds")]
         ).map_batches(
             lambda s: self._consumption_time_batch_impl(
-                s.struct.field("viewTimeSec"), s.struct.field("durationSeconds")
+                s.struct.field("viewTimeSec"), s.struct.field("durationSeconds"), smooth
             ),
             return_dtype=pl.Float64,
         )
@@ -189,6 +186,7 @@ class FeaturesPairsGenerator:
         like_weight: float,
         dislike_weight: float,
         consumption_time_weight: float,
+        smooth: float,
     ) -> pl.DataFrame:
         logger.info(f"Feature table creating with {len(df)} rows ...")
 
@@ -230,7 +228,9 @@ class FeaturesPairsGenerator:
                 ).alias("dislike_target"),
                 # consumption_time target
                 self.consumption_time_batch(
-                    pl.col("viewTimeSec"), pl.col("durationSeconds")
+                    pl.col("viewTimeSec"),
+                    pl.col("durationSeconds"),
+                    smooth,
                 ).alias("consumption_time_target"),
             ]
         )
