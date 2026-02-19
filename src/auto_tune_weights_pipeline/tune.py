@@ -1,5 +1,6 @@
 import typing as t
 import catboost as cb
+import numpy as np
 
 from pathlib import Path
 from loguru import logger
@@ -57,13 +58,17 @@ class Objective:
         self.formula_path = formula_path
         self.save_predictions = save_predictions
 
+        if np.isclose(self.alpha, 1.0) and self.use_baseline_model:
+            _msg = f"If use_baseline_model = True, then alpha must be < 1.0 [alpha = {alpha:.4g}]"
+            logger.error(_msg)
+            raise ValueError(_msg)
+
         self._baseline_model_metric = (
             self._get_baseline_metric() if self.use_baseline_model else 0.0
         )
         logger.info(
             f"Use baseline model: {self.use_baseline_model} (alpha = {self.alpha:.4g})"
         )
-        logger.debug(f"Baseline model metric: {self._baseline_model_metric:.4g}")
 
     def _get_baseline_metric(self) -> float:
         _trainer = CatboostTrainer()
@@ -130,6 +135,7 @@ class Objective:
         )
 
         delta = local_model_metric - self._baseline_model_metric
+        logger.debug(f"Delta: {delta:.5f}")
         return self.alpha * local_model_metric + (1 - self.alpha) * (
             1 * int(self.use_baseline_model) + delta
         )

@@ -48,7 +48,7 @@ class FeaturesPairsGenerator:
     def _map_feature_names_to_feature_ids(
         self,
         path_to_feature_names: StrPath,
-        n: int = 30,
+        n: int = 5,
     ) -> List[int]:
         feature_name_to_feature_id: Dict[str, int] = requests.post(
             url=self.dictionary_hub_url,
