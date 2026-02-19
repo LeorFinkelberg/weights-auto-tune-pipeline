@@ -44,6 +44,11 @@ setup_logging()
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default=None,
 )
+@click.option(
+    "--path-to-baseline-model",
+    type=click.Path(file_okay=True, path_type=Path),
+    default=None,
+)
 @click.option("--nav-screen", type=click.STRING, default=NavScreens.VIDEO_FOR_YOU)
 @click.option(
     "--platforms",
@@ -62,6 +67,8 @@ setup_logging()
 )
 @click.option("--metric-name", default=SummaryLogFields.GAUC_WEIGHTED)
 @click.option("--session-col-name", type=click.STRING, default=Columns.RID_COL_NAME)
+@click.option("--alpha", type=click.FLOAT, default=1.0)
+@click.option("--use-baseline-model", type=click.BOOL, default=False)
 @click.option("--iterations", type=click.INT, default=150)
 @click.option("--depth", type=click.INT, default=6)
 @click.option("--l2-leaf-reg", type=click.FLOAT, default=3.0)
@@ -84,6 +91,7 @@ def main(
     path_to_pool_cache_val,
     path_to_feature_names,
     path_to_pretrained_model,
+    path_to_baseline_model,
     nav_screen,
     platforms,
     formula_path,
@@ -91,6 +99,8 @@ def main(
     target_name,
     metric_name,
     session_col_name,
+    use_baseline_model,
+    alpha,
     iterations,
     depth,
     l2_leaf_reg,
@@ -144,6 +154,7 @@ def main(
                 target_config,
                 pool_cache_info_train=pool_cache_info_train,
                 pool_cache_info_val=pool_cache_info_val,
+                path_to_baseline_model=path_to_baseline_model,
                 features_pairs_generator=features_pairs_generator,
                 catboost_params={
                     "iterations": iterations,
@@ -160,6 +171,8 @@ def main(
                 target_name=target_name,
                 metric_name=metric_name,
                 session_col_name=session_col_name,
+                alpha=alpha,
+                use_baseline_model=use_baseline_model,
                 calculate_regular_auc=calculate_regular_auc,
                 save_predictions=save_predictions,
             ),
@@ -181,7 +194,7 @@ def main(
         _model_name = path_to_pretrained_model.name.replace(
             path_to_pretrained_model.suffix, ""
         )
-        get_metric(
+        _ = get_metric(
             trainer=trainer,
             target_config=target_config,
             pool_cache_info_val=pool_cache_info_val,

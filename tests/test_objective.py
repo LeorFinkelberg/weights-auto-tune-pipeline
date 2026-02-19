@@ -7,6 +7,7 @@ import catboost as cb
 from unittest.mock import patch, Mock, MagicMock
 from optuna.trial import FixedTrial
 
+from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import NavScreens, Platforms
 from auto_tune_weights_pipeline.tune import Objective
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
@@ -115,8 +116,10 @@ class TestObjective:
                     "l2_leaf_reg": 3.0,
                 },
                 formula_path="fstorage:vk_video_266_1769078359_f",
+                session_col_name=Columns.RID_COL_NAME,
                 nav_screen=NavScreens.VIDEO_FOR_YOU,
                 platforms=(Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
+                use_baseline_model=False,
             )
 
             trial = FixedTrial(
