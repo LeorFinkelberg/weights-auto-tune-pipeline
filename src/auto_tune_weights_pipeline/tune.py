@@ -75,7 +75,7 @@ class Objective:
         _trainer = CatboostTrainer()
         _trainer.load(self.path_to_baseline_model)
 
-        baseline_model_metric: np.ndarray[float] = get_metric(
+        baseline_model_metrics: np.ndarray[float] = get_metric(
             trainer=_trainer,
             target_config=self.target_config,
             pool_cache_info_val=self.pool_cache_info_val,
@@ -90,9 +90,9 @@ class Objective:
             model_name="baseline_model",
             save_predictions=False,
         )
-        logger.info(f"Baseline model metric: {baseline_model_metric}")
+        logger.info(f"Baseline model metrics: {baseline_model_metrics}")
 
-        return baseline_model_metric
+        return baseline_model_metrics
 
     def __call__(self, trial: Trial) -> tuple[float, ...]:
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
