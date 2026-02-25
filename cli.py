@@ -91,6 +91,7 @@ setup_logging()
 @click.option("--show-progress-bar/--no-show-progress-bar", default=True)
 @click.option("--save-predictions/--no-save-predictions", default=False)
 @click.option("--calculate-regular-auc/--no-calculate-regular-auc", default=True)
+@click.option("-n-jobs", type=click.INT, default=2)
 def main(
     path_to_pool_cache_train,
     path_to_pool_cache_val,
@@ -120,6 +121,7 @@ def main(
     show_progress_bar,
     save_predictions,
     calculate_regular_auc,
+    n_jobs,
 ) -> None:
     target_config: t.Final[dict] = {
         TargetNames.WATCH_COVERAGE_1S: TargetConfig(
@@ -200,6 +202,7 @@ def main(
             timeout=timeout,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
+            n_jobs=n_jobs,
         )
 
         logger.debug(f"Best values: {study.best_trials}")
