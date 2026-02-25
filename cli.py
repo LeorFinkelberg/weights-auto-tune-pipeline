@@ -92,7 +92,7 @@ setup_logging()
 @click.option("--show-progress-bar/--no-show-progress-bar", default=True)
 @click.option("--save-predictions/--no-save-predictions", default=False)
 @click.option("--calculate-regular-auc/--no-calculate-regular-auc", default=True)
-@click.option("-n-jobs", type=click.INT, default=2)
+@click.option("--n-jobs", type=click.INT, default=2)
 def main(
     path_to_pool_cache_train,
     path_to_pool_cache_val,
