@@ -1,9 +1,8 @@
-import typing as t
+import numpy as np
 
 from auto_tune_weights_pipeline.columns import Columns
 from auto_tune_weights_pipeline.constants import NavScreens, Platforms, SummaryLogFields
 from auto_tune_weights_pipeline.types_ import StrPath, TupleStrOrPlatforms
-from auto_tune_weights_pipeline.target_config import TargetNames
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.ml import CatBoostPoolProcessor, PoolCacheInfo
 from auto_tune_weights_pipeline.metrics.gauc import GAUC
@@ -19,12 +18,11 @@ def get_metric(
     nav_screen: NavScreens = NavScreens.VIDEO_FOR_YOU,
     platforms: TupleStrOrPlatforms = (Platforms.ANDROID, Platforms.VK_VIDEO_ANDROID),
     target_details: SummaryLogFields = SummaryLogFields.TARGET_DETAILS,
-    target_name: t.Union[str, TargetNames] = TargetNames.WATCH_COVERAGE_30S,
     metric_name: str = SummaryLogFields.GAUC_WEIGHTED,
     model_name: str = "local_catboost",
     save_predictions: bool = False,
     calculate_regular_auc: bool = True,
-) -> float:
+):
     _path_to_pool_cache_with_catboost_scores: StrPath = (
         CatBoostPoolProcessor.add_catboost_scores_to_pool_cache(
             trainer=trainer,
@@ -49,4 +47,9 @@ def get_metric(
         )
     )
 
-    return summary[target_details][target_name][metric_name]
+    return np.array(
+        [
+            summary[target_details][target_name][metric_name]
+            for target_name in target_config.keys()
+        ]
+    )

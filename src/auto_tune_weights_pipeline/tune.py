@@ -62,18 +62,20 @@ class Objective:
             logger.error(_msg)
             raise ValueError(_msg)
 
-        self._baseline_model_metric = (
-            self._get_baseline_metric() if self.use_baseline_model else 0.0
+        self._baseline_model_metrics = (
+            (self._get_baseline_metric())
+            if self.use_baseline_model
+            else np.zeros(len(target_config.values()))
         )
         logger.info(
             f"Use baseline model: {self.use_baseline_model} (alpha = {self.alpha:.4g})"
         )
 
-    def _get_baseline_metric(self) -> float:
+    def _get_baseline_metric(self) -> np.ndarray[float]:
         _trainer = CatboostTrainer()
         _trainer.load(self.path_to_baseline_model)
 
-        baseline_model_metric = get_metric(
+        baseline_model_metric: np.ndarray[float] = get_metric(
             trainer=_trainer,
             target_config=self.target_config,
             pool_cache_info_val=self.pool_cache_info_val,
@@ -82,18 +84,17 @@ class Objective:
             platforms=self.platforms,
             formula_path=self.formula_path,
             target_details=self.target_details,
-            target_name=self.target_name,
             metric_name=self.metric_name,
             session_col_name=self.session_col_name,
             calculate_regular_auc=self.calculate_regular_auc,
             model_name="baseline_model",
             save_predictions=False,
         )
-        logger.info(f"Baseline model metric: {baseline_model_metric:.5f}")
+        logger.info(f"Baseline model metric: {baseline_model_metric}")
 
         return baseline_model_metric
 
-    def __call__(self, trial: Trial) -> float:
+    def __call__(self, trial: Trial) -> tuple[float, ...]:
         like_weight = trial.suggest_float("like_weight", 0.0, 1_000.0)
         dislike_weight = trial.suggest_float("dislike_weight", 0.0, 1_000.0)
         consumption_time_weight = trial.suggest_float(
@@ -119,7 +120,7 @@ class Objective:
         trainer = CatboostTrainer(self.catboost_params)
         trainer.train(pool_train)
 
-        local_model_metric = get_metric(
+        local_model_metrics: np.ndarray[float] = get_metric(
             trainer=trainer,
             target_config=self.target_config,
             pool_cache_info_val=self.pool_cache_info_val,
@@ -128,15 +129,17 @@ class Objective:
             platforms=self.platforms,
             formula_path=self.formula_path,
             target_details=self.target_details,
-            target_name=self.target_name,
             metric_name=self.metric_name,
             session_col_name=self.session_col_name,
             calculate_regular_auc=self.calculate_regular_auc,
             save_predictions=self.save_predictions,
         )
 
-        delta = local_model_metric - self._baseline_model_metric
-        logger.debug(f"Delta: {delta:.5f}")
-        return self.alpha * local_model_metric + (1 - self.alpha) * (
-            1 * int(self.use_baseline_model) + delta
+        deltas: np.ndarray[float] = local_model_metrics - self._baseline_model_metrics
+        logger.debug(f"Deltas: {deltas}")
+
+        _to_call = self.alpha * local_model_metrics + (1 - self.alpha) * (
+            1 * int(self.use_baseline_model) + deltas
         )
+
+        return tuple(_to_call.tolist())

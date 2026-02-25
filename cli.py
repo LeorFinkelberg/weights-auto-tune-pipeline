@@ -120,11 +120,26 @@ def main(
     calculate_regular_auc,
 ) -> None:
     target_config: t.Final[dict] = {
+        TargetNames.WATCH_COVERAGE_1S: TargetConfig(
+            target_name=TargetNames.WATCH_COVERAGE_1S,
+            event_name=EventNames.WATCH_COVERAGE_RECORD,
+            view_threshold_sec=1.0,
+        ),
         TargetNames.WATCH_COVERAGE_30S: TargetConfig(
             target_name=TargetNames.WATCH_COVERAGE_30S,
             event_name=EventNames.WATCH_COVERAGE_RECORD,
             view_threshold_sec=30.0,
-        )
+        ),
+        TargetNames.WATCH_COVERAGE_300S: TargetConfig(
+            target_name=TargetNames.WATCH_COVERAGE_300S,
+            event_name=EventNames.WATCH_COVERAGE_RECORD,
+            view_threshold_sec=300.0,
+        ),
+        TargetNames.WATCH_COVERAGE_1200S: TargetConfig(
+            target_name=TargetNames.WATCH_COVERAGE_1200S,
+            event_name=EventNames.WATCH_COVERAGE_RECORD,
+            view_threshold_sec=1200.0,
+        ),
     }
 
     pool_cache_info_val = PoolCacheInfo(
@@ -147,7 +162,7 @@ def main(
         )
 
         study = optuna.create_study(
-            direction=direction,
+            directions=[direction] * len(target_config.values()),
             study_name=study_name,
             storage=f"sqlite:///{study_name}.db",
             load_if_exists=load_if_exists,
@@ -185,9 +200,9 @@ def main(
             show_progress_bar=show_progress_bar,
         )
 
-        logger.info(f"Best value: {study.best_trial.value}")
-        logger.info(f"Best trial number: {study.best_trial.number}")
-        logger.info(f"Best trial params: {study.best_trial.params}")
+        logger.debug(f"Best values: {study.best_trials}")
+        logger.success(f"Best trial number: {study.best_trials[0].number}")
+        logger.success(f"Best trial params: {study.best_trials[0].params}")
     else:
         logger.info("=== MODE FOR OBTAINING FORECASTS FROM PRE-TRAINED MODEL ===")
 
@@ -206,7 +221,6 @@ def main(
             platforms=platforms,
             formula_path=formula_path,
             target_details=target_details,
-            target_name=target_name,
             metric_name=metric_name,
             session_col_name=session_col_name,
             calculate_regular_auc=calculate_regular_auc,

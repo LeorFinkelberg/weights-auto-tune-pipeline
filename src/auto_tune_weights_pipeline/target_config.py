@@ -13,8 +13,11 @@ class TargetNames(StrEnum):
         return name.lower()
 
     ACTION_PLAY = auto()
+    WATCH_COVERAGE_1S = auto()
     WATCH_COVERAGE_30S = auto()
     WATCH_COVERAGE_60S = auto()
+    WATCH_COVERAGE_300S = auto()
+    WATCH_COVERAGE_1200S = auto()
     FIRST_FRAME = auto()
 
 
