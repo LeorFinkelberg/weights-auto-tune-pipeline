@@ -84,6 +84,7 @@ setup_logging()
 )
 @click.option("--n-trials", type=click.INT, default=3)
 @click.option("--timeout", type=click.FLOAT, default=120)
+@click.option("--storage", type=click.STRING, default=None)
 @click.option("--direction", type=click.STRING, default="maximize")
 @click.option("--study-name", type=click.STRING, default="tune_target_events_weights")
 @click.option("--load-if-exists/--no-load-if-exists", default=True)
@@ -114,6 +115,7 @@ def main(
     loss_function,
     n_trials,
     timeout,
+    storage,
     direction,
     study_name,
     load_if_exists,
@@ -168,7 +170,7 @@ def main(
         study = optuna.create_study(
             directions=[direction] * len(target_config.values()),
             study_name=study_name,
-            storage=f"sqlite:///{study_name}.db",
+            storage=storage,
             load_if_exists=load_if_exists,
         )
 
