@@ -126,11 +126,6 @@ def main(
     n_jobs,
 ) -> None:
     target_config: t.Final[dict] = {
-        TargetNames.WATCH_COVERAGE_1S: TargetConfig(
-            target_name=TargetNames.WATCH_COVERAGE_1S,
-            event_name=EventNames.WATCH_COVERAGE_RECORD,
-            view_threshold_sec=1.0,
-        ),
         TargetNames.WATCH_COVERAGE_30S: TargetConfig(
             target_name=TargetNames.WATCH_COVERAGE_30S,
             event_name=EventNames.WATCH_COVERAGE_RECORD,
