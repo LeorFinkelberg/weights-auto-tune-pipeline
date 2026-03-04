@@ -14,7 +14,6 @@ from auto_tune_weights_pipeline.ml import (
     CatBoostPoolProcessor,
     PoolCacheInfo,
 )
-from auto_tune_weights_pipeline.target_config import TargetNames
 from auto_tune_weights_pipeline.constants import SummaryLogFields, Platforms, NavScreens
 from auto_tune_weights_pipeline.metrics.utils import get_metric
 
@@ -35,7 +34,6 @@ class Objective:
         nav_screen: t.Union[str, NavScreens] = NavScreens.VIDEO_FOR_YOU,
         platforms: TupleStrOrPlatforms = (Platforms.VK_VIDEO_ANDROID,),
         target_details=SummaryLogFields.TARGET_DETAILS,
-        target_name=TargetNames.WATCH_COVERAGE_30S,
         metric_name=SummaryLogFields.GAUC_WEIGHTED,
         calculate_regular_auc=True,
     ) -> None:
@@ -47,7 +45,6 @@ class Objective:
         self.nav_screen = nav_screen
         self.platforms = platforms
         self.target_details = target_details
-        self.target_name = target_name
         self.metric_name = metric_name
         self.session_col_name = session_col_name
         self.alpha = alpha

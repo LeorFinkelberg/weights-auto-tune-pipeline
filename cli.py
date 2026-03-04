@@ -62,9 +62,6 @@ setup_logging()
 @click.option(
     "--target-details", type=click.STRING, default=SummaryLogFields.TARGET_DETAILS
 )
-@click.option(
-    "--target-name", type=click.STRING, default=TargetNames.WATCH_COVERAGE_30S
-)
 @click.option("--metric-name", default=SummaryLogFields.GAUC_WEIGHTED)
 @click.option(
     "--session-col-name",
@@ -103,7 +100,6 @@ def main(
     platforms,
     formula_path,
     target_details,
-    target_name,
     metric_name,
     session_col_name,
     alpha,
@@ -188,7 +184,6 @@ def main(
                 platforms=platforms,
                 formula_path=formula_path,
                 target_details=target_details,
-                target_name=target_name,
                 metric_name=metric_name,
                 session_col_name=session_col_name,
                 alpha=alpha,
