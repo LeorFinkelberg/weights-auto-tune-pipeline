@@ -13,8 +13,20 @@ from contextlib import contextmanager
 
 from dataclasses import dataclass
 from auto_tune_weights_pipeline.columns import Columns
-from auto_tune_weights_pipeline.constants import YtProxyClusterNames, SummaryLogFields
+from auto_tune_weights_pipeline.constants import (
+    YtProxyClusterNames,
+    SummaryLogFields,
+    SamplerNames,
+    RANDOM_SEED,
+)
 from auto_tune_weights_pipeline.types_ import StrPath, StrTablePath
+from optuna.samplers import (
+    RandomSampler,
+    GPSampler,
+    TPESampler,
+    NSGAIISampler,
+    NSGAIIISampler,
+)
 
 
 class Timer:
@@ -168,3 +180,26 @@ class LogParser:
         )
 
         return np.array([group["auc"] for group in _logs])
+
+
+class SamplerUtils:
+    @classmethod
+    def get_sampler_by_name(cls, sampler_name: str, seed: int = RANDOM_SEED):
+        match sampler_name:
+            case SamplerNames.AUTO_SAMPLER:
+                import optunahub
+
+                module = optunahub.load_module(package="samplers/auto_sampler")
+                return module.AutoSampler()
+            case SamplerNames.GP_SAMPLER:
+                return GPSampler()
+            case SamplerNames.TPE_SAMPLER:
+                return TPESampler()
+            case SamplerNames.NSGAII_SAMPLER:
+                return NSGAIISampler(seed=seed)
+            case SamplerNames.NSGAIII_SAMPLER:
+                return NSGAIIISampler(seed=seed)
+            case SamplerNames.RANDOM_SAMPLER:
+                return RandomSampler(seed=seed)
+            case _:
+                raise ValueError(f"Unknown sampler: {sampler_name!r}")

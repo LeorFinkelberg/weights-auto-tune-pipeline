@@ -13,6 +13,7 @@ from auto_tune_weights_pipeline.logging_config import setup_logging
 from auto_tune_weights_pipeline.features_pairs_generator import FeaturesPairsGenerator
 from auto_tune_weights_pipeline.constants import (
     LossFunctions,
+    SamplerNames,
     Platforms,
     NavScreens,
     SummaryLogFields,
@@ -21,6 +22,8 @@ from auto_tune_weights_pipeline.ml import PoolCacheInfo, CatboostTrainer
 from auto_tune_weights_pipeline.target_config import TargetConfig, TargetNames
 from auto_tune_weights_pipeline.metrics.utils import get_metric
 from auto_tune_weights_pipeline.columns import Columns
+from auto_tune_weights_pipeline.utils import SamplerUtils
+from optuna.samplers._base import BaseSampler
 
 setup_logging()
 
@@ -77,9 +80,12 @@ setup_logging()
 @click.option("--learning-rate", type=click.FLOAT, default=0.05)
 @click.option("--subsample", type=click.FLOAT, default=0.7)
 @click.option(
-    "--loss-function", type=click.STRING, default=LossFunctions.PAIR_LOGIT_PAIRWISE
+    "--loss-function", type=click.STRING, default=str(LossFunctions.PAIR_LOGIT_PAIRWISE)
 )
 @click.option("--n-trials", type=click.INT, default=3)
+@click.option(
+    "--sampler-name", type=click.STRING, default=str(SamplerNames.AUTO_SAMPLER)
+)
 @click.option("--timeout", type=click.FLOAT, default=120)
 @click.option("--storage", type=click.STRING, default=None)
 @click.option("--direction", type=click.STRING, default="maximize")
@@ -89,7 +95,7 @@ setup_logging()
 @click.option("--show-progress-bar/--no-show-progress-bar", default=True)
 @click.option("--save-predictions/--no-save-predictions", default=False)
 @click.option("--calculate-regular-auc/--no-calculate-regular-auc", default=True)
-@click.option("--n-jobs", type=click.INT, default=2)
+@click.option("--n-jobs", type=click.INT, default=1)
 def main(
     path_to_pool_cache_train,
     path_to_pool_cache_val,
@@ -110,6 +116,7 @@ def main(
     subsample,
     loss_function,
     n_trials,
+    sampler_name,
     timeout,
     storage,
     direction,
@@ -121,6 +128,7 @@ def main(
     calculate_regular_auc,
     n_jobs,
 ) -> None:
+    sampler: BaseSampler = SamplerUtils.get_sampler_by_name(sampler_name)
     target_config: t.Final[dict] = {
         TargetNames.WATCH_COVERAGE_30S: TargetConfig(
             target_name=TargetNames.WATCH_COVERAGE_30S,
@@ -161,6 +169,7 @@ def main(
         study = optuna.create_study(
             directions=[direction] * len(target_config.values()),
             study_name=study_name,
+            sampler=sampler,
             storage=storage,
             load_if_exists=load_if_exists,
         )

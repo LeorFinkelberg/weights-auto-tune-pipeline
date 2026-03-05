@@ -35,6 +35,19 @@ class LossFunctions(StrEnum):
     PAIR_LOGIT_PAIRWISE = "PairLogitPairwise"
 
 
+class SamplerNames(StrEnum):
+    """
+    See https://optuna.readthedocs.io/en/stable/reference/samplers/index.html
+    """
+
+    AUTO_SAMPLER = "AutoSampler"
+    RANDOM_SAMPLER = "RandomSampler"
+    GP_SAMPLER = "GPSampler"
+    TPE_SAMPLER = "TPESampler"
+    NSGAII_SAMPLER = "NSGAIISampler"
+    NSGAIII_SAMPLER = "NSGAIIISampler"
+
+
 class CatboostTaskTypes(StrEnum):
     @staticmethod
     def _generate_next_value_(name, start, count, last_values) -> str:
