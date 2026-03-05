@@ -129,6 +129,8 @@ def main(
     n_jobs,
 ) -> None:
     sampler: BaseSampler = SamplerUtils.get_sampler_by_name(sampler_name)
+    logger.info(f"Run optimizing with {sampler_name!r} ...")
+
     target_config: t.Final[dict] = {
         TargetNames.WATCH_COVERAGE_30S: TargetConfig(
             target_name=TargetNames.WATCH_COVERAGE_30S,
