@@ -190,7 +190,7 @@ class SamplerUtils:
                 import optunahub
 
                 module = optunahub.load_module(package="samplers/auto_sampler")
-                return module.AutoSampler()
+                return module.AutoSampler(seed=seed)
             case SamplerNames.GP_SAMPLER:
                 return GPSampler()
             case SamplerNames.TPE_SAMPLER:
